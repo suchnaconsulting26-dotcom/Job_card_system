@@ -1,0 +1,16 @@
+src/app/api/auth/login/route.ts
+src/app/api/auth/logout/route.ts
+src/app/api/auth/me/route.ts
+src/app/api/auth/signup/route.ts
+src/app/api/clients/route.ts
+src/app/api/inventory/route.ts
+src/app/create/page.tsx
+src/app/favicon.ico
+src/app/globals.css
+src/app/inventory/page.tsx
+src/app/jobs/[id]/edit/page.tsx
+src/app/jobs/[id]/page.tsx
+src/app/layout.tsx
+src/app/login/page.tsx
+src/app/page.tsx
+src/app/signup/page.tsx
