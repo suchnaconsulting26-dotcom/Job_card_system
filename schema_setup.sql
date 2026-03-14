@@ -176,3 +176,33 @@ ON public.job_cards FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can delete their own job cards." 
 ON public.job_cards FOR DELETE USING (auth.uid() = user_id);
+
+-- =============================================================================
+-- DATABASE CONSTRAINTS & INDEXES
+-- =============================================================================
+
+-- Add CHECK constraints for data integrity
+ALTER TABLE public.job_cards
+ADD CONSTRAINT check_job_quantity CHECK (quantity > 0),
+ADD CONSTRAINT check_delivery_after_order CHECK (delivery_date >= order_date),
+ADD CONSTRAINT check_ready_quantity CHECK (ready_quantity >= 0);
+
+ALTER TABLE public.inventory_items
+ADD CONSTRAINT check_inventory_quantity CHECK (quantity >= 0);
+
+-- Add UNIQUE constraint on job_no
+ALTER TABLE public.job_cards
+ADD CONSTRAINT unique_job_no UNIQUE(job_no);
+
+-- Create indexes for frequently queried columns
+CREATE INDEX IF NOT EXISTS idx_clients_user_id ON public.clients(user_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_user_id ON public.inventory_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_client_id ON public.inventory_items(client_id);
+CREATE INDEX IF NOT EXISTS idx_job_cards_user_id ON public.job_cards(user_id);
+CREATE INDEX IF NOT EXISTS idx_job_cards_status ON public.job_cards(status);
+CREATE INDEX IF NOT EXISTS idx_job_cards_party_name ON public.job_cards(party_name);
+CREATE INDEX IF NOT EXISTS idx_inventory_items_name ON public.inventory_items(name);
+
+-- Create partial indexes for better query performance
+CREATE INDEX IF NOT EXISTS idx_job_cards_pending ON public.job_cards(user_id) WHERE status = 'pending';
+CREATE INDEX IF NOT EXISTS idx_job_cards_in_progress ON public.job_cards(user_id) WHERE status = 'in-progress';
