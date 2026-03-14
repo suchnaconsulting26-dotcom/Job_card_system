@@ -1,9 +1,8 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
 import { z } from 'zod';
-import { addJobCard, updateJobCard, updateJobStatus, addClient, addInventoryItem, updateInventoryItem, deleteInventoryItem } from './storage';
+import { addJobCard, updateJobCard, updateJobStatus, deleteJobCard, renumberJobCards, addClient, addInventoryItem, updateInventoryItem, deleteInventoryItem } from './storage';
 import { CreateJobCardInput, JobCard, CreateInventoryItemInput } from './types';
 
 // Validation Schemas
@@ -12,6 +11,10 @@ const boxSizeSchema = z.object({
     w: z.string().min(1, 'Width is required').max(50),
     h: z.string().min(1, 'Height is required').max(50),
 });
+
+const dateStringSchema = z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format')
+    .transform(date => new Date(date + 'T00:00:00Z').toISOString());
 
 const jobCardSchema = z.object({
     partyName: z.string().min(1, 'Party name is required').max(255),
@@ -27,11 +30,11 @@ const jobCardSchema = z.object({
     gsm: z.string().min(1, 'GSM is required').max(50),
     printingColor: z.string().min(1, 'Printing color is required').max(255),
     stitching: z.boolean(),
-    orderDate: z.string().datetime('Invalid date format'),
-    deliveryDate: z.string().datetime('Invalid date format'),
+    orderDate: dateStringSchema,
+    deliveryDate: dateStringSchema,
     readyQuantity: z.number().int().nonnegative().optional(),
     vehicleNumber: z.string().max(50).optional(),
-    remarks: z.string().max(1000).optional(),
+    remarks: z.string().max(1000).default(''),
 });
 
 const clientNameSchema = z.object({
@@ -56,16 +59,16 @@ const inventoryItemSchema = z.object({
     stitching: z.boolean().optional(),
 });
 
-
 export async function createJobAction(data: CreateJobCardInput) {
     try {
         const validated = jobCardSchema.parse(data);
         await addJobCard(validated);
         revalidatePath('/');
-        redirect('/');
+        return { redirectTo: '/' };
     } catch (error) {
         if (error instanceof z.ZodError) {
-            throw new Error(`Validation failed: ${error.errors[0].message}`);
+            const message = error.issues[0]?.message || 'Validation failed';
+            throw new Error(`Validation failed: ${message}`);
         }
         throw error;
     }
@@ -77,10 +80,11 @@ export async function updateJobAction(id: string, data: CreateJobCardInput) {
         await updateJobCard(id, validated);
         revalidatePath('/');
         revalidatePath(`/jobs/${id}`);
-        redirect('/');
+        return { redirectTo: '/' };
     } catch (error) {
         if (error instanceof z.ZodError) {
-            throw new Error(`Validation failed: ${error.errors[0].message}`);
+            const message = error.issues[0]?.message || 'Validation failed';
+            throw new Error(`Validation failed: ${message}`);
         }
         throw error;
     }
@@ -96,15 +100,26 @@ export async function updateJobStatusAction(id: string, status: JobCard['status'
     revalidatePath(`/jobs/${id}`);
 }
 
+export async function deleteJobCardAction(id: string) {
+    try {
+        await deleteJobCard(id);
+        await renumberJobCards();
+        revalidatePath('/');
+    } catch (error) {
+        throw error;
+    }
+}
+
 export async function createClientAction(name: string) {
     try {
         const validated = clientNameSchema.parse({ name });
         await addClient(validated.name);
         revalidatePath('/inventory');
-        redirect('/inventory');
+        return { redirectTo: '/inventory' };
     } catch (error) {
         if (error instanceof z.ZodError) {
-            throw new Error(`Validation failed: ${error.errors[0].message}`);
+            const message = error.issues[0]?.message || 'Validation failed';
+            throw new Error(`Validation failed: ${message}`);
         }
         throw error;
     }
@@ -116,10 +131,11 @@ export async function createInventoryItemAction(data: CreateInventoryItemInput) 
         await addInventoryItem(validated);
         revalidatePath('/inventory');
         revalidatePath(`/inventory/${data.clientId}`);
-        redirect(`/inventory/${data.clientId}`);
+        return { redirectTo: `/inventory/${data.clientId}` };
     } catch (error) {
         if (error instanceof z.ZodError) {
-            throw new Error(`Validation failed: ${error.errors[0].message}`);
+            const message = error.issues[0]?.message || 'Validation failed';
+            throw new Error(`Validation failed: ${message}`);
         }
         throw error;
     }
@@ -133,12 +149,11 @@ export async function updateInventoryItemAction(clientId: string, id: string, da
         revalidatePath(`/inventory/${clientId}`);
         revalidatePath(`/inventory/${clientId}/items/${id}`);
         revalidatePath(`/inventory/${clientId}/items/${id}/edit`);
-        if (redirectTo) {
-            redirect(redirectTo);
-        }
+        return redirectTo ? { redirectTo } : { redirectTo: null };
     } catch (error) {
         if (error instanceof z.ZodError) {
-            throw new Error(`Validation failed: ${error.errors[0].message}`);
+            const message = error.issues[0]?.message || 'Validation failed';
+            throw new Error(`Validation failed: ${message}`);
         }
         throw error;
     }
@@ -154,7 +169,7 @@ export async function deleteInventoryItemAction(clientId: string, id: string) {
         revalidatePath(`/inventory/${clientId}`);
     } catch (error) {
         if (error instanceof z.ZodError) {
-            throw new Error(`Validation failed: ${error.errors[0].message}`);
+            throw new Error(`Validation failed: ${error.issues[0]?.message || 'Validation failed'}`);
         }
         throw error;
     }

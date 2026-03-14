@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Package, ArrowLeft, AlertCircle } from 'lucide-react';
+import { Package, AlertCircle } from 'lucide-react';
 import { signInAction } from '@/lib/auth-actions';
 
 export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const router = useRouter();
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -23,6 +24,12 @@ export default function LoginPage() {
         if (result?.error) {
             setError(result.error);
             setIsLoading(false);
+            return;
+        }
+
+        if (result?.redirectTo) {
+            router.push(result.redirectTo);
+            router.refresh();
         }
     }
 

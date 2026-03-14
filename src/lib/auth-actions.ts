@@ -45,10 +45,10 @@ export async function signUpAction(formData: FormData) {
             return { success: false, message: 'Please check your email to verify your account before logging in.' };
         }
 
-        redirect('/');
+        return { redirectTo: '/' };
     } catch (error) {
         const message = error instanceof z.ZodError
-            ? error.errors[0].message
+            ? error.issues[0]?.message || 'Sign up failed'
             : error instanceof Error
                 ? error.message
                 : 'Sign up failed';
@@ -80,10 +80,10 @@ export async function signInAction(formData: FormData) {
             return { error: 'Please verify your email before accessing the app. Check your email for verification link.' };
         }
 
-        redirect('/');
+        return { redirectTo: '/' };
     } catch (error) {
         const message = error instanceof z.ZodError
-            ? error.errors[0].message
+            ? error.issues[0]?.message || 'Sign in failed'
             : error instanceof Error
                 ? error.message
                 : 'Sign in failed';

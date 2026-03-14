@@ -192,6 +192,37 @@ export async function deleteJobCard(id: string): Promise<void> {
     }
 }
 
+export async function renumberJobCards(): Promise<void> {
+    const supabase = await createClient();
+
+    // Get all job cards ordered by job_no descending
+    const { data, error: fetchError } = await supabase
+        .from('job_cards')
+        .select('id')
+        .order('job_no', { ascending: false });
+
+    if (fetchError) {
+        console.error('Error fetching job cards for renumbering:', fetchError);
+        throw new Error('Failed to fetch job cards');
+    }
+
+    // Update each card with new sequential numbers
+    if (data && data.length > 0) {
+        for (let i = 0; i < data.length; i++) {
+            const newJobNo = data.length - i;
+            const { error: updateError } = await supabase
+                .from('job_cards')
+                .update({ job_no: newJobNo })
+                .eq('id', data[i].id);
+
+            if (updateError) {
+                console.error('Error updating job number:', updateError);
+                throw new Error('Failed to renumber job cards');
+            }
+        }
+    }
+}
+
 // Client Storage
 export async function getClients(): Promise<Client[]> {
     const supabase = await createClient();

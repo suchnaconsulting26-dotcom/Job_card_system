@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
-import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut } from 'lucide-react';
+import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut, User as UserIcon } from 'lucide-react';
 import { Button } from './ui/Button';
 import { createClient } from '@/lib/supabase/client';
 import { signOutAction } from '@/lib/auth-actions';
@@ -132,7 +132,7 @@ export function Sidebar() {
                             onClick={() => setIsOpen(false)}
                             className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-bold text-industrial uppercase tracking-wider text-xs border-2 border-industrial/10 hover:bg-industrial hover:text-white transition-all`}
                         >
-                            <User className="w-4 h-4" />
+                            <UserIcon className="w-4 h-4" />
                             Sign In
                         </Link>
                     )}

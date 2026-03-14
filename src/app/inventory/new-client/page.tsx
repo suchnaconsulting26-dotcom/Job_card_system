@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClientAction } from '@/lib/actions';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -10,6 +11,7 @@ import Link from 'next/link';
 export default function NewClientPage() {
     const [name, setName] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const router = useRouter();
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
@@ -17,7 +19,11 @@ export default function NewClientPage() {
 
         setIsSubmitting(true);
         try {
-            await createClientAction(name.trim());
+            const result = await createClientAction(name.trim());
+            if (result?.redirectTo) {
+                router.push(result.redirectTo);
+                router.refresh();
+            }
         } catch (error) {
             console.error('Failed to create client:', error);
             setIsSubmitting(false);

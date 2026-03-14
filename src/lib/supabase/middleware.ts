@@ -5,6 +5,7 @@ export async function updateSession(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
         request,
     })
+    const isServerAction = request.headers.has('next-action')
 
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,7 +16,7 @@ export async function updateSession(request: NextRequest) {
                     return request.cookies.getAll()
                 },
                 setAll(cookiesToSet) {
-                    cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+                    cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
                     supabaseResponse = NextResponse.next({
                         request,
                     })
@@ -39,6 +40,9 @@ export async function updateSession(request: NextRequest) {
 
     // If there's no user and the route is NOT an auth route (meaning it's protected)
     if (!user && !isAuthRoute) {
+        if (isServerAction) {
+            return supabaseResponse
+        }
         const url = request.nextUrl.clone()
         url.pathname = '/login'
         return NextResponse.redirect(url)
@@ -66,3 +70,4 @@ export async function updateSession(request: NextRequest) {
 
     return supabaseResponse
 }
+

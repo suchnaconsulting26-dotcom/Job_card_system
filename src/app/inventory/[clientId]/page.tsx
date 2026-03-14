@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getClients, getInventoryItems } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
 import { SearchBar } from '@/components/SearchBar';
-import { Eye, Package, PencilLine, Plus, Trash2 } from 'lucide-react';
+import { Eye, Package, PencilLine, Plus, Trash2, ArrowLeft } from 'lucide-react';
 import { deleteInventoryItemAction } from '@/lib/actions';
 
 export const revalidate = 30;

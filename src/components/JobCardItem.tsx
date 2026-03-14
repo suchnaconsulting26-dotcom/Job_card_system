@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { JobCard } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
-import { Package } from 'lucide-react';
+import { Package, Trash2 } from 'lucide-react';
+import { DeleteJobCardButton } from './DeleteJobCardButton';
 
 export function JobCardItem({ card }: { card: JobCard }) {
     return (
@@ -44,6 +45,7 @@ export function JobCardItem({ card }: { card: JobCard }) {
                     <Link href={`/jobs/${card.id}`}>
                         <Button size="sm" variant="ghost">View</Button>
                     </Link>
+                    <DeleteJobCardButton id={card.id} />
                 </div>
             </div>
         </div>

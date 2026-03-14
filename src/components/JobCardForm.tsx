@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createJobAction, updateJobAction } from '@/lib/actions';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -15,6 +16,7 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const isMounted = useRef(true);
+    const router = useRouter();
 
     useEffect(() => {
         return () => {
@@ -26,7 +28,6 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
         setError(null);
         setIsSubmitting(true);
 
-        // Extract data from formData
         const data = {
             partyName: formData.get('partyName') as string,
             boxName: formData.get('boxName') as string,
@@ -53,10 +54,13 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
         };
 
         try {
-            if (initialData) {
-                await updateJobAction(initialData.id, data);
-            } else {
-                await createJobAction(data);
+            const result = initialData
+                ? await updateJobAction(initialData.id, data)
+                : await createJobAction(data);
+
+            if (result?.redirectTo) {
+                router.push(result.redirectTo);
+                router.refresh();
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to save job card';
@@ -79,12 +83,9 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                     </div>
                 </div>
             )}
-            <form action={handleSubmit} className="bg-white max-w-5xl mx-auto border-2 border-black text-black" disabled={isSubmitting}>
-
+            <form action={handleSubmit} className="bg-white max-w-5xl mx-auto border-2 border-black text-black">
                 <div className="flex flex-col md:flex-row">
-                    {/* Left Main Content (75%) */}
                     <div className="w-full md:w-[75%] border-b-2 md:border-b-0 md:border-r-2 border-black">
-                        {/* Header Row */}
                         <div className="flex border-b-2 border-black">
                             <div className="flex-1 p-4 border-r-2 border-black flex items-center justify-center">
                                 <h2 className="text-2xl font-black uppercase tracking-wider">Job Card Sheet</h2>
@@ -95,7 +96,6 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                             </div>
                         </div>
 
-                        {/* Row 1: Company & Date */}
                         <div className="flex border-b-2 border-black">
                             <div className="flex-1 border-r-2 border-black p-4">
                                 <Input name="partyName" label="COMPANY NAME" required placeholder="e.g. Acme Corp" defaultValue={initialData?.partyName} className="font-bold text-lg" />
@@ -105,16 +105,12 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                             </div>
                         </div>
 
-                        {/* Row 2: Box Name */}
                         <div className="border-b-2 border-black p-4">
-                            <Input name="boxName" label="BOX NAME / ID" placeholder="WAB..." defaultValue={initialData?.boxName} className="font-bold text-xl" />
+                            <Input name="boxName" label="BOX NAME / ID" required placeholder="WAB..." defaultValue={initialData?.boxName} className="font-bold text-xl" />
                         </div>
 
-                        {/* Middle Grid Section */}
                         <div className="border-b-2 border-black">
-                            {/* Central Specs */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
-                                {/* Box Size & Dimensions Group */}
                                 <div className="col-span-1 p-2 border-b-2 md:border-b-2 md:border-r-2 border-black space-y-2">
                                     <span className="text-xs font-bold block">BOX SIZE (MM)</span>
                                     <Input name="boxSizeL" placeholder="L" required defaultValue={initialData?.boxSize.l} />
@@ -122,7 +118,6 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                                     <Input name="boxSizeH" placeholder="H" required defaultValue={initialData?.boxSize.h} />
                                 </div>
 
-                                {/* Cutting & Decal Size - Grouped nicely next to Box Size */}
                                 <div className="col-span-1 p-2 border-b-2 md:border-b-0 md:border-r-2 border-black space-y-4">
                                     <div>
                                         <Input name="cuttingSize" label="CUTTING SIZE" placeholder="120x340" defaultValue={initialData?.cuttingSize} />
@@ -132,31 +127,28 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                                     </div>
                                 </div>
 
-                                {/* Order Qty - Spans 2 cols for visibility */}
                                 <div className="col-span-1 sm:col-span-2 p-4 border-b-2 border-black bg-gray-50 flex flex-col justify-center">
                                     <Input name="quantity" type="number" label="ORDER QUANTITY" required defaultValue={initialData?.quantity} className="text-3xl font-black text-center h-16" />
                                 </div>
 
-                                {/* Materials Row 1 */}
                                 <div className="col-span-1 p-2 border-b-2 md:border-b-2 md:border-r-2 border-black">
-                                    <Input name="topPaper" label="TOP PAPER" placeholder="Golden..." defaultValue={initialData?.topPaper} />
+                                    <Input name="topPaper" label="TOP PAPER" required placeholder="Golden..." defaultValue={initialData?.topPaper} />
                                 </div>
                                 <div className="col-span-1 p-2 border-b-2 md:border-b-2 md:border-r-2 border-black">
-                                    <Input name="liner" label="LINER" placeholder="120+120" defaultValue={initialData?.liner} />
+                                    <Input name="liner" label="LINER" required placeholder="120+120" defaultValue={initialData?.liner} />
                                 </div>
                                 <div className="col-span-1 sm:col-span-2 p-2 border-b-2 border-black">
                                     <Input name="numberOfPapers" label="NO. OF PAPERS" placeholder="3, 5..." defaultValue={initialData?.numberOfPapers} />
                                 </div>
 
-                                {/* Materials Row 2 */}
                                 <div className="col-span-1 p-2 border-b-2 md:border-b-2 md:border-r-2 border-black">
-                                    <Input name="gsm" label="GSM" placeholder="150/150..." defaultValue={initialData?.gsm} />
+                                    <Input name="gsm" label="GSM" required placeholder="150/150..." defaultValue={initialData?.gsm} />
                                 </div>
                                 <div className="col-span-1 p-2 border-b-2 md:border-b-2 md:border-r-2 border-black">
-                                    <Input name="ply" label="PLY" placeholder="3-Ply..." defaultValue={initialData?.ply} />
+                                    <Input name="ply" label="PLY" required placeholder="3-Ply..." defaultValue={initialData?.ply} />
                                 </div>
                                 <div className="col-span-1 sm:col-span-2 p-2 border-b-2 border-black grid grid-cols-2 gap-4">
-                                    <Input name="printingColor" label="PRINTING" placeholder="Red, Blue..." defaultValue={initialData?.printingColor} />
+                                    <Input name="printingColor" label="PRINTING" required placeholder="Red, Blue..." defaultValue={initialData?.printingColor} />
                                     <div className="flex items-center gap-2 mt-6">
                                         <input type="checkbox" name="stitching" id="stitching" className="w-5 h-5" defaultChecked={initialData?.stitching} />
                                         <label htmlFor="stitching" className="font-bold text-sm">STITCHING</label>
@@ -165,7 +157,6 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                             </div>
                         </div>
 
-                        {/* Footer Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 min-h-[150px]">
                             <div className="border-b-2 md:border-b-0 md:border-r-2 border-black p-4 space-y-4">
                                 <Input name="deliveryDate" type="date" label="DISPATCH DATE" required defaultValue={initialData?.deliveryDate ? initialData.deliveryDate.split('T')[0] : ''} />
@@ -178,7 +169,6 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                         </div>
                     </div>
 
-                    {/* Right Sidebar (Instructions/Actions) */}
                     <div className="w-full md:w-[25%] flex flex-col bg-gray-50 border-t-2 md:border-t-0 border-black">
                         <div className="border-b-2 border-black p-4 text-center bg-gray-100">
                             <h3 className="font-bold uppercase">Actions</h3>
@@ -203,5 +193,6 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                     </div>
                 </div>
             </form>
-            );
+        </>
+    );
 }

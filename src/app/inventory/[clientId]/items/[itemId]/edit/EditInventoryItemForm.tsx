@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { InventoryItemForm } from '@/components/InventoryItemForm';
 import { updateInventoryItemAction } from '@/lib/actions';
 import type { CreateInventoryItemInput, InventoryItem } from '@/lib/types';
@@ -17,6 +18,7 @@ export function EditInventoryItemForm({
     itemId,
 }: EditInventoryItemFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const router = useRouter();
 
     async function handleSubmit(data: CreateInventoryItemInput) {
         if (isSubmitting) {
@@ -25,12 +27,16 @@ export function EditInventoryItemForm({
 
         setIsSubmitting(true);
         try {
-            await updateInventoryItemAction(
+            const result = await updateInventoryItemAction(
                 clientId,
                 itemId,
                 data,
                 `/inventory/${clientId}/items/${itemId}`
             );
+            if (result?.redirectTo) {
+                router.push(result.redirectTo);
+                router.refresh();
+            }
         } catch (error) {
             console.error('Failed to update item:', error);
             setIsSubmitting(false);

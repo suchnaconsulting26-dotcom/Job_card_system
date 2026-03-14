@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, use } from 'react';
+import { useRouter } from 'next/navigation';
 import { createInventoryItemAction } from '@/lib/actions';
 import { Button } from '@/components/ui/Button';
 import { InventoryItemForm } from '@/components/InventoryItemForm';
@@ -15,13 +16,18 @@ export default function NewItemPage({
 }) {
     const { clientId } = use(params);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const router = useRouter();
 
     async function handleSubmit(data: CreateInventoryItemInput) {
         if (isSubmitting) return;
         setIsSubmitting(true);
 
         try {
-            await createInventoryItemAction(data);
+            const result = await createInventoryItemAction(data);
+            if (result?.redirectTo) {
+                router.push(result.redirectTo);
+                router.refresh();
+            }
         } catch (error) {
             console.error('Failed to create item:', error);
             setIsSubmitting(false);
