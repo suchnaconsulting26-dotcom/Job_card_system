@@ -1,32 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, User, LogOut } from 'lucide-react';
+import type { User } from '@supabase/supabase-js';
+import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut } from 'lucide-react';
 import { Button } from './ui/Button';
 import { createClient } from '@/lib/supabase/client';
 import { signOutAction } from '@/lib/auth-actions';
 
 export function Sidebar() {
     const [isOpen, setIsOpen] = useState(false);
-    const [user, setUser] = useState<any>(null);
+    const [user, setUser] = useState<User | null>(null);
     const pathname = usePathname();
     const supabase = createClient();
+    const isMounted = useRef(true);
 
     useEffect(() => {
+        isMounted.current = true;
+
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            setUser(user);
+            if (isMounted.current) {
+                setUser(user ?? null);
+            }
         };
+
         getUser();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUser(session?.user ?? null);
+            if (isMounted.current) {
+                setUser(session?.user ?? null);
+            }
         });
 
-        return () => subscription.unsubscribe();
-    }, [supabase.auth]);
+        return () => {
+            isMounted.current = false;
+            subscription?.unsubscribe();
+        };
+    }, []); // Empty dependency array - auth is global
 
     return (
         <>

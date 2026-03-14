@@ -3,32 +3,70 @@
 import { createClient } from '@/lib/supabase/server';
 import { CreateJobCardInput, JobCard, JobStatus, Client, InventoryItem, CreateInventoryItemInput } from './types';
 
+// Type guards
+function isString(value: unknown): value is string {
+    return typeof value === 'string';
+}
 
-// Helper to map DB record to JobCard type
+function isNumber(value: unknown): value is number {
+    return typeof value === 'number';
+}
+
+function isBoolean(value: unknown): value is boolean {
+    return typeof value === 'boolean';
+}
+
+function isObject(value: unknown): value is Record<string, unknown> {
+    return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isJobStatus(value: unknown): value is JobStatus {
+    return isString(value) && ['pending', 'in-progress', 'completed', 'hold'].includes(value);
+}
+
+// Helper to map DB record to JobCard type with proper validation
 function mapRecordToJobCard(record: Record<string, unknown>): JobCard {
+    if (!isString(record.id)) throw new Error('Invalid id');
+    if (!isNumber(record.job_no)) throw new Error('Invalid job_no');
+    if (!isString(record.created_at)) throw new Error('Invalid created_at');
+    if (!isString(record.party_name)) throw new Error('Invalid party_name');
+    if (!isString(record.box_name)) throw new Error('Invalid box_name');
+    if (!isObject(record.box_size)) throw new Error('Invalid box_size');
+    if (!isNumber(record.quantity)) throw new Error('Invalid quantity');
+    if (!isString(record.ply)) throw new Error('Invalid ply');
+    if (!isString(record.top_paper)) throw new Error('Invalid top_paper');
+    if (!isString(record.liner)) throw new Error('Invalid liner');
+    if (!isString(record.gsm)) throw new Error('Invalid gsm');
+    if (!isString(record.printing_color)) throw new Error('Invalid printing_color');
+    if (!isBoolean(record.stitching)) throw new Error('Invalid stitching');
+    if (!isString(record.order_date)) throw new Error('Invalid order_date');
+    if (!isString(record.delivery_date)) throw new Error('Invalid delivery_date');
+    if (!isJobStatus(record.status)) throw new Error('Invalid status');
+    if (!isString(record.remarks)) throw new Error('Invalid remarks');
+
     return {
-        id: record.id as string,
-        jobNo: record.job_no as number,
-        createdAt: record.created_at as string,
-        partyName: record.party_name as string,
-        boxName: record.box_name as string,
+        id: record.id,
+        jobNo: record.job_no,
+        createdAt: record.created_at,
+        partyName: record.party_name,
+        boxName: record.box_name,
         boxSize: record.box_size as { l: string; w: string; h: string },
-        cuttingSize: record.cutting_size as string | undefined,
-        decalSize: record.decal_size as string | undefined,
-        quantity: record.quantity as number,
-        ply: record.ply as string,
-        topPaper: record.top_paper as string,
-        liner: record.liner as string,
-        numberOfPapers: record.num_papers as string | undefined,
-        gsm: record.gsm as string,
-        printingColor: record.printing_color as string,
-        stitching: record.stitching as boolean,
-        orderDate: record.order_date as string,
-        deliveryDate: record.delivery_date as string,
-        readyQuantity: record.ready_quantity as number | undefined,
-        vehicleNumber: record.vehicle_no as string | undefined,
-        status: record.status as JobStatus,
-        remarks: record.remarks as string,
+        cuttingSize: isString(record.cutting_size) ? record.cutting_size : undefined,
+        decalSize: isString(record.decal_size) ? record.decal_size : undefined,
+        quantity: record.quantity,
+        ply: record.ply,
+        topPaper: record.top_paper,
+        liner: record.liner,
+        numberOfPapers: isString(record.num_papers) ? record.num_papers : undefined,
+        gsm: record.gsm,
+        printingColor: record.printing_color,
+        stitching: record.stitching,
+        orderDate: record.order_date,
+        deliveryDate: record.delivery_date,
+        readyQuantity: isNumber(record.ready_quantity) ? record.ready_quantity : undefined,
+        vehicleNumber: isString(record.vehicle_no) ? record.vehicle_no : undefined,
+        status: record.status,
+        remarks: record.remarks,
     };
 }
 
@@ -97,13 +135,13 @@ export async function getJobCardById(id: string): Promise<JobCard | undefined> {
 export async function addJobCard(data: CreateJobCardInput): Promise<void> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
         throw new Error('You must be logged in to do this.');
     }
 
     const record = { ...mapInputToRecord(data), user_id: user.id };
-    
+
     const { error } = await supabase
         .from('job_cards')
         .insert([record]);
@@ -177,7 +215,7 @@ export async function getClients(): Promise<Client[]> {
 export async function addClient(name: string): Promise<void> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
         throw new Error('You must be logged in to do this.');
     }
@@ -270,7 +308,7 @@ export async function getInventoryItemById(id: string): Promise<InventoryItem | 
 export async function addInventoryItem(data: CreateInventoryItemInput): Promise<void> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     if (!user) {
         throw new Error('You must be logged in to do this.');
     }
