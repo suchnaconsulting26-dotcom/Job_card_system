@@ -154,7 +154,20 @@ export async function addJobCard(data: CreateJobCardInput): Promise<void> {
 
 export async function updateJobCard(id: string, data: CreateJobCardInput): Promise<void> {
     const supabase = await createClient();
-    const record = mapInputToRecord(data);
+    
+    const { data: maxJob } = await supabase
+        .from('job_cards')
+        .select('job_no')
+        .order('job_no', { ascending: false })
+        .limit(1)
+        .single();
+        
+    const nextJobNo = maxJob ? maxJob.job_no + 1 : 1;
+
+    const record = {
+        ...mapInputToRecord(data),
+        job_no: nextJobNo
+    };
     const { error } = await supabase
         .from('job_cards')
         .update(record)
@@ -168,9 +181,22 @@ export async function updateJobCard(id: string, data: CreateJobCardInput): Promi
 
 export async function updateJobStatus(id: string, status: JobStatus): Promise<void> {
     const supabase = await createClient();
+    
+    const { data: maxJob } = await supabase
+        .from('job_cards')
+        .select('job_no')
+        .order('job_no', { ascending: false })
+        .limit(1)
+        .single();
+        
+    const nextJobNo = maxJob ? maxJob.job_no + 1 : 1;
+
     const { error } = await supabase
         .from('job_cards')
-        .update({ status })
+        .update({ 
+            status,
+            job_no: nextJobNo
+        })
         .eq('id', id);
 
     if (error) {

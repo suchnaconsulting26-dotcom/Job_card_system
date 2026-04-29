@@ -28,7 +28,7 @@ export function DeleteJobCardButton({ id }: DeleteJobCardButtonProps) {
 
     if (showConfirm) {
         return (
-            <div className="flex gap-1">
+            <div className="flex w-full flex-wrap justify-end gap-1 sm:w-auto">
                 <Button
                     size="sm"
                     variant="ghost"
@@ -54,9 +54,10 @@ export function DeleteJobCardButton({ id }: DeleteJobCardButtonProps) {
         <Button
             size="sm"
             variant="ghost"
-            className="text-red-600 hover:bg-red-50"
+            className="w-full text-red-600 hover:bg-red-50 sm:w-auto"
             onClick={() => setShowConfirm(true)}
             title="Delete job card"
+            aria-label="Delete job card"
         >
             <Trash2 className="w-4 h-4" />
         </Button>

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getClients, getInventoryItems } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
 import { SearchBar } from '@/components/SearchBar';
-import { Eye, Package, PencilLine, Plus, Trash2, ArrowLeft } from 'lucide-react';
+import { Eye, Package, PencilLine, Plus, Trash2, ArrowLeft, Printer } from 'lucide-react';
 import { deleteInventoryItemAction } from '@/lib/actions';
 
 export const revalidate = 30;
@@ -153,6 +153,11 @@ export default async function ClientInventoryPage({
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                            <Link href={`/inventory/${clientId}/items/${item.id}/print`}>
+                                                <Button variant="ghost" size="icon" aria-label={`Print ${item.name}`}>
+                                                    <Printer className="w-4 h-4" />
+                                                </Button>
+                                            </Link>
                                             <Link href={`/inventory/${clientId}/items/${item.id}`}>
                                                 <Button variant="ghost" size="icon" aria-label={`View ${item.name}`}>
                                                     <Eye className="w-4 h-4" />

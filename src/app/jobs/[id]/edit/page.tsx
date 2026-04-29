@@ -25,7 +25,7 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
             </div>
 
             <div className="max-w-4xl mx-auto">
-                <h1 className="text-2xl font-bold text-industrial mb-6">Edit Job Card #{card.jobNo}</h1>
+                <h1 className="text-2xl font-bold text-industrial mb-6">Edit Job Card</h1>
                 <JobCardForm initialData={card} />
             </div>
         </div>

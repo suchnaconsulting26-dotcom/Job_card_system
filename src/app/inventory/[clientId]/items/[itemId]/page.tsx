@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Boxes, FilePenLine, Package, PencilLine, Ruler } from 'lucide-react';
+import { ArrowLeft, Boxes, FilePenLine, Package, PencilLine, Ruler, Printer } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { getClients, getInventoryItemById } from '@/lib/storage';
 
@@ -59,12 +59,20 @@ export default async function InventoryItemDetailPage({
                         <p className="text-industrial/60 mt-1">Created {formatDate(item.createdAt)} and updated {formatDate(item.updatedAt)}</p>
                     </div>
                 </div>
-                <Link href={`/inventory/${clientId}/items/${itemId}/edit`}>
-                    <Button>
-                        <PencilLine className="w-5 h-5 mr-2" />
-                        Edit Item
-                    </Button>
-                </Link>
+                <div className="flex items-center gap-2">
+                    <Link href={`/inventory/${clientId}/items/${itemId}/print`}>
+                        <Button variant="secondary">
+                            <Printer className="w-5 h-5 mr-2" />
+                            Print Job Card
+                        </Button>
+                    </Link>
+                    <Link href={`/inventory/${clientId}/items/${itemId}/edit`}>
+                        <Button>
+                            <PencilLine className="w-5 h-5 mr-2" />
+                            Edit Item
+                        </Button>
+                    </Link>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

@@ -1,21 +1,18 @@
 import Link from 'next/link';
 import { JobCard } from '@/lib/types';
 import { Button } from '@/components/ui/Button';
-import { Package, Trash2 } from 'lucide-react';
+import { Package } from 'lucide-react';
 import { DeleteJobCardButton } from './DeleteJobCardButton';
 
 export function JobCardItem({ card }: { card: JobCard }) {
     return (
-        <div className="bg-white rounded-sm shadow-sm border border-kraft-dark/20 p-6 relative overflow-hidden transition-all hover:shadow-md hover:border-kraft-dark/40 group">
+        <div className="bg-white rounded-sm shadow-sm border border-kraft-dark/20 p-6 relative overflow-hidden transition-all hover:shadow-md hover:border-kraft-dark/40 group h-full">
             {/* Texture overlay */}
             <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')]"></div>
 
-            <div className="relative z-10 space-y-4">
+            <div className="relative z-10 flex h-full flex-col space-y-4">
                 <div className="flex justify-between items-start">
-                    <div>
-                        <span className="inline-block px-2 py-1 text-xs font-bold uppercase tracking-wider bg-kraft/20 text-kraft-dark rounded-sm mb-2">
-                            #{card.jobNo}
-                        </span>
+                    <div className="min-w-0 flex-1 pr-3">
                         <h3 className="text-lg font-bold text-industrial truncate w-full">{card.partyName}</h3>
                         <p className="text-sm text-industrial/60 flex items-center gap-1">
                             <Package className="w-3 h-3" /> {card.boxName || 'Standard Job'}
@@ -41,9 +38,9 @@ export function JobCardItem({ card }: { card: JobCard }) {
                     </div>
                 </div>
 
-                <div className="pt-2 flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Link href={`/jobs/${card.id}`}>
-                        <Button size="sm" variant="ghost">View</Button>
+                <div className="mt-auto flex flex-wrap items-center justify-end gap-2 border-t border-industrial/5 pt-4">
+                    <Link href={`/jobs/${card.id}`} className="w-full sm:w-auto">
+                        <Button size="sm" variant="ghost" className="w-full sm:w-auto">View</Button>
                     </Link>
                     <DeleteJobCardButton id={card.id} />
                 </div>

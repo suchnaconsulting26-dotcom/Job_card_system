@@ -19,8 +19,7 @@ export default async function DashboardPage({
     const term = query.toLowerCase();
     return (
       card.partyName.toLowerCase().includes(term) ||
-      card.boxName.toLowerCase().includes(term) ||
-      card.jobNo.toString().includes(term)
+      card.boxName.toLowerCase().includes(term)
     );
   }) : cards;
 

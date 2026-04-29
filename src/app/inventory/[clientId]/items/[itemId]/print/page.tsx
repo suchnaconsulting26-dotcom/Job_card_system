@@ -1,33 +1,35 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getJobCardById } from '@/lib/storage';
+import { getClients, getInventoryItemById } from '@/lib/storage';
 import { Button } from '@/components/ui/Button';
 import { PrintButton } from '@/components/PrintButton';
 import { ArrowLeft } from 'lucide-react';
 
-export default async function JobDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
-    const card = await getJobCardById(id);
+export default async function PrintInventoryItemPage({
+    params,
+}: {
+    params: Promise<{ clientId: string; itemId: string }>;
+}) {
+    const { clientId, itemId } = await params;
+    const [client, item] = await Promise.all([
+        getClients().then((clients) => clients.find((entry) => entry.id === clientId)),
+        getInventoryItemById(itemId),
+    ]);
 
-    if (!card) {
+    if (!client || !item || item.clientId !== clientId) {
         notFound();
     }
 
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex items-center justify-between print:hidden">
-                <Link href="/">
+                <Link href={`/inventory/${clientId}/items/${itemId}`}>
                     <Button variant="ghost" className="pl-0 hover:bg-transparent hover:text-industrial/80">
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Dashboard
+                        Back to Item Details
                     </Button>
                 </Link>
                 <div className="flex gap-2">
-                    <Link href={`/jobs/${id}/edit`}>
-                        <Button variant="secondary" className="print:hidden">
-                            Edit
-                        </Button>
-                    </Link>
                     <PrintButton />
                 </div>
             </div>
@@ -50,11 +52,11 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                         <div style={{ display: 'flex', borderBottom: '2px solid black', minHeight: '60px' }}>
                             <div style={{ flex: '1', borderRight: '2px solid black', padding: '8px' }}>
                                 <span className="text-xs font-bold block mb-1">COMPANY NAME :-</span>
-                                <p className="text-xl font-bold font-handwriting text-blue-900">{card.partyName}</p>
+                                <p className="text-xl font-bold font-handwriting text-blue-900">{client.name}</p>
                             </div>
                             <div style={{ width: '192px', padding: '8px' }}>
                                 <span className="text-xs font-bold block mb-1">DATE :</span>
-                                <p className="text-lg font-bold">{card.orderDate.split('T')[0]}</p>
+                                <p className="text-lg font-bold">{new Date().toISOString().split('T')[0]}</p>
                             </div>
                         </div>
 
@@ -62,7 +64,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                         <div style={{ display: 'flex', borderBottom: '2px solid black', minHeight: '60px' }}>
                             <div style={{ flex: '1', padding: '8px' }}>
                                 <span className="text-xs font-bold block mb-1">BOX :-</span>
-                                <p className="text-2xl font-bold text-blue-900">{card.boxName || '-'}</p>
+                                <p className="text-2xl font-bold text-blue-900">{item.name || '-'}</p>
                             </div>
                         </div>
 
@@ -74,53 +76,53 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                                 <div style={{ padding: '8px', borderBottom: '2px solid black', borderRight: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">BOX SIZE (MM)</span>
                                     <div className="text-xl font-bold leading-none text-blue-900">
-                                        <div>{card.boxSize.l} x</div>
-                                        <div>{card.boxSize.w} x</div>
-                                        <div>{card.boxSize.h}</div>
+                                        <div>{item.boxSize?.l || '-'} x</div>
+                                        <div>{item.boxSize?.w || '-'} x</div>
+                                        <div>{item.boxSize?.h || '-'}</div>
                                     </div>
                                 </div>
                                 {/* Cutting Size */}
                                 <div style={{ padding: '8px', borderBottom: '2px solid black', borderRight: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">CUTTING SIZE</span>
-                                    <p className="text-xl font-bold text-blue-900">{card.cuttingSize || '-'}</p>
+                                    <p className="text-xl font-bold text-blue-900">{item.cuttingSize || '-'}</p>
                                 </div>
                                 {/* Decal Size */}
                                 <div style={{ padding: '8px', borderBottom: '2px solid black', borderRight: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">DECAL SIZE</span>
-                                    <p className="text-xl font-bold text-blue-900">{card.decalSize || '-'}</p>
+                                    <p className="text-xl font-bold text-blue-900">{item.decalSize || '-'}</p>
                                 </div>
                                 {/* Order Qty */}
                                 <div style={{ padding: '8px', borderBottom: '2px solid black', backgroundColor: '#f9fafb', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
                                     <span className="text-xs font-bold block mb-1 self-start">ORDER QUANTITY</span>
-                                    <p className="text-3xl font-black text-center">{card.quantity}</p>
+                                    <p className="text-3xl font-black text-center">{item.quantity}</p>
                                 </div>
 
                                 {/* Row 2 of Grid */}
                                 <div style={{ padding: '8px', borderBottom: '2px solid black', borderRight: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">TOP PAPER :-</span>
-                                    <p className="text-lg font-bold text-blue-900">{card.topPaper || '-'}</p>
+                                    <p className="text-lg font-bold text-blue-900">{item.topPaper || '-'}</p>
                                 </div>
                                 <div style={{ padding: '8px', borderBottom: '2px solid black', borderRight: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">LINER :-</span>
-                                    <p className="text-lg font-bold text-blue-900">{card.liner || '-'}</p>
+                                    <p className="text-lg font-bold text-blue-900">{item.liner || '-'}</p>
                                 </div>
                                 <div style={{ gridColumn: 'span 2', padding: '8px', borderBottom: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">NO. OF PAPERS :-</span>
-                                    <p className="text-lg font-bold text-blue-900">{card.numberOfPapers || '-'}</p>
+                                    <p className="text-lg font-bold text-blue-900">-</p>
                                 </div>
 
                                 {/* Row 3 of Grid */}
                                 <div style={{ padding: '8px', borderBottom: '2px solid black', borderRight: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">GSM</span>
-                                    <p className="text-lg font-bold text-blue-900">{card.gsm || '-'}</p>
+                                    <p className="text-lg font-bold text-blue-900">{item.gsm || '-'}</p>
                                 </div>
                                 <div style={{ padding: '8px', borderBottom: '2px solid black', borderRight: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">PLY</span>
-                                    <p className="text-lg font-bold text-blue-900">{card.ply || '-'}</p>
+                                    <p className="text-lg font-bold text-blue-900">{item.ply || '-'}</p>
                                 </div>
                                 <div style={{ gridColumn: 'span 2', padding: '8px', borderBottom: '2px solid black' }}>
                                     <span className="text-xs font-bold block mb-1">PRINTING :-</span>
-                                    <p className="text-lg font-bold text-blue-900">{card.printingColor || 'None'}</p>
+                                    <p className="text-lg font-bold text-blue-900">{item.printing || 'None'}</p>
                                 </div>
                             </div>
                         </div>
@@ -130,20 +132,20 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                             <div style={{ borderRight: '2px solid black', padding: '8px' }}>
                                 <div className="mb-4">
                                     <span className="text-xs font-bold block">DISPATCH DATE :-</span>
-                                    <p className="text-lg font-bold ml-4">{card.deliveryDate.split('T')[0]}</p>
+                                    <p className="text-lg font-bold ml-4">-</p>
                                 </div>
                                 <div className="mb-4">
                                     <span className="text-xs font-bold block">READY QTY :-</span>
-                                    <p className="text-lg font-bold ml-4">{card.readyQuantity || '-'}</p>
+                                    <p className="text-lg font-bold ml-4">-</p>
                                 </div>
                                 <div className="mb-4">
                                     <span className="text-xs font-bold block">VEHICLE NO. :-</span>
-                                    <p className="text-lg font-bold ml-4">{card.vehicleNumber || '-'}</p>
+                                    <p className="text-lg font-bold ml-4">-</p>
                                 </div>
                             </div>
                             <div style={{ padding: '8px' }}>
                                 <span className="text-xs font-bold block mb-2">REMARKS :-</span>
-                                <p className="text-lg italic">{card.remarks}</p>
+                                <p className="text-lg italic">{item.description || '-'}</p>
                             </div>
                         </div>
                     </div>

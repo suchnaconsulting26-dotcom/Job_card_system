@@ -54,9 +54,8 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
         };
 
         try {
-            const result = initialData
-                ? await updateJobAction(initialData.id, data)
-                : await createJobAction(data);
+            // As requested, editing an existing card now creates a new duplicate card instead of overwriting
+            const result = await createJobAction(data);
 
             if (result?.redirectTo) {
                 router.push(result.redirectTo);
@@ -91,8 +90,6 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                                 <h2 className="text-2xl font-black uppercase tracking-wider">Job Card Sheet</h2>
                             </div>
                             <div className="w-48 p-2 flex flex-col justify-center bg-gray-50 text-center">
-                                <span className="text-xs font-bold block mb-1">JOB NO.</span>
-                                <p className="text-xl font-black">{initialData?.jobNo ? `No. ${initialData.jobNo}` : 'AUTO'}</p>
                             </div>
                         </div>
 
@@ -183,10 +180,10 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        {initialData ? 'Updating...' : 'Creating...'}
+                                        {initialData ? 'Saving as New...' : 'Creating...'}
                                     </>
                                 ) : (
-                                    initialData ? 'Update Job Card' : 'Create Job Card'
+                                    initialData ? 'Save as New Job Card (Duplicate)' : 'Create Job Card'
                                 )}
                             </Button>
                         </div>
