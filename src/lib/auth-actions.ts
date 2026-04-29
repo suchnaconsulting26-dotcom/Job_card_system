@@ -96,3 +96,42 @@ export async function signOutAction() {
     await supabase.auth.signOut();
     redirect('/login');
 }
+
+export async function resetPasswordAction(formData: FormData) {
+    try {
+        const supabase = await createServerSideClient();
+        const email = formData.get('email') as string;
+        const origin = formData.get('origin') as string || '';
+        
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+            redirectTo: origin ? `${origin}/update-password` : undefined,
+        });
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        return { success: true };
+    } catch (error) {
+        return { error: error instanceof Error ? error.message : 'Reset failed' };
+    }
+}
+
+export async function updatePasswordAction(formData: FormData) {
+    try {
+        const supabase = await createServerSideClient();
+        const password = formData.get('password') as string;
+
+        const { error } = await supabase.auth.updateUser({
+            password: password
+        });
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        return { redirectTo: '/' };
+    } catch (error) {
+        return { error: error instanceof Error ? error.message : 'Update failed' };
+    }
+}
