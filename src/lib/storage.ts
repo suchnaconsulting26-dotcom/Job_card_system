@@ -94,6 +94,42 @@ function mapInputToRecord(data: CreateJobCardInput) {
     };
 }
 
+export async function getDashboardStats(): Promise<{
+    totalJobCards: number;
+    totalInventoryItems: number;
+    totalClients: number;
+    pendingJobCards: number;
+    inProgressJobCards: number;
+    completedJobCards: number;
+}> {
+    const supabase = await createClient();
+
+    const [
+        { count: jobCardCount },
+        { count: inventoryCount },
+        { count: clientCount },
+        { count: pendingCount },
+        { count: inProgressCount },
+        { count: completedCount },
+    ] = await Promise.all([
+        supabase.from('job_cards').select('*', { count: 'exact', head: true }),
+        supabase.from('inventory_items').select('*', { count: 'exact', head: true }),
+        supabase.from('clients').select('*', { count: 'exact', head: true }),
+        supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'in-progress'),
+        supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+    ]);
+
+    return {
+        totalJobCards: jobCardCount ?? 0,
+        totalInventoryItems: inventoryCount ?? 0,
+        totalClients: clientCount ?? 0,
+        pendingJobCards: pendingCount ?? 0,
+        inProgressJobCards: inProgressCount ?? 0,
+        completedJobCards: completedCount ?? 0,
+    };
+}
+
 export async function getJobCards(): Promise<JobCard[]> {
     const supabase = await createClient();
     const { data, error } = await supabase

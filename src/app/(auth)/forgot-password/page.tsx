@@ -4,12 +4,13 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Package, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Package, AlertCircle, CheckCircle2, Mail } from 'lucide-react';
 import { resetPasswordAction } from '@/lib/auth-actions';
 
 export default function ForgotPasswordPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
+    const [sentEmail, setSentEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -18,12 +19,15 @@ export default function ForgotPasswordPage() {
         setIsLoading(true);
 
         const formData = new FormData(e.currentTarget);
+        const email = formData.get('email') as string;
         formData.append('origin', window.location.origin);
+
         const result = await resetPasswordAction(formData);
 
         if (result?.error) {
             setError(result.error);
         } else {
+            setSentEmail(email);
             setSuccess(true);
         }
         setIsLoading(false);
@@ -36,7 +40,9 @@ export default function ForgotPasswordPage() {
                     <Package className="w-8 h-8" />
                 </div>
                 <h1 className="text-2xl font-bold text-industrial tracking-tight">Reset Password</h1>
-                <p className="text-industrial/60 mt-1">We will send you a recovery link</p>
+                <p className="text-industrial/60 mt-1">
+                    {success ? 'Check your inbox' : 'We\'ll send you a password reset link'}
+                </p>
             </div>
 
             <div className="bg-white p-8 border-2 border-industrial/10 shadow-sm space-y-6">
@@ -46,23 +52,51 @@ export default function ForgotPasswordPage() {
                         <p>{error}</p>
                     </div>
                 )}
-                
+
                 {success ? (
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3 text-green-700 text-sm">
-                        <CheckCircle2 className="w-5 h-5 flex-shrink-0" />
-                        <p>Password reset link has been sent to your email.</p>
+                    <div className="space-y-4">
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3 text-green-700 text-sm">
+                            <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-semibold">Reset link sent!</p>
+                                <p className="mt-1 text-green-600">
+                                    We sent a password reset link to{' '}
+                                    <span className="font-medium">{sentEmail}</span>. 
+                                    Click the link in that email to create a new password.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="p-4 bg-blue-50 border border-blue-100 rounded-lg flex items-start gap-3 text-blue-700 text-sm">
+                            <Mail className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                            <div>
+                                <p className="font-semibold">Didn't receive the email?</p>
+                                <ul className="mt-1 text-blue-600 list-disc list-inside space-y-1">
+                                    <li>Check your spam / junk folder</li>
+                                    <li>The link expires in 1 hour</li>
+                                    <li>
+                                        <button
+                                            onClick={() => setSuccess(false)}
+                                            className="underline hover:no-underline font-medium"
+                                        >
+                                            Try sending again with a different email
+                                        </button>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 ) : (
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <Input
-                            label="Email"
+                            label="Email address"
                             name="email"
                             type="email"
                             placeholder="admin@jobcardsystem.com"
                             required
                         />
                         <Button className="w-full" type="submit" disabled={isLoading}>
-                            {isLoading ? 'Sending Link...' : 'Send Reset Link'}
+                            {isLoading ? 'Sending Reset Link…' : 'Send Reset Link'}
                         </Button>
                     </form>
                 )}
@@ -70,7 +104,7 @@ export default function ForgotPasswordPage() {
                 <div className="text-center text-sm">
                     <span className="text-industrial/60">Remember your password? </span>
                     <Link href="/login" className="font-semibold text-industrial hover:underline">
-                        Sign in
+                        Back to Sign In
                     </Link>
                 </div>
             </div>
