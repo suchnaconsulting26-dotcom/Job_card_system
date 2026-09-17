@@ -39,8 +39,8 @@ export default function NewClientPage() {
                     </Button>
                 </Link>
                 <div>
-                    <h1 className="text-3xl font-bold text-industrial tracking-tight">New Client Category</h1>
-                    <p className="text-industrial/60 mt-1">Add a company to categorize your inventory.</p>
+                    <h1 className="text-3xl font-bold text-industrial tracking-tight">New Industry</h1>
+                    <p className="text-industrial/60 mt-1">Add a company or industry category.</p>
                 </div>
             </div>
 
@@ -48,11 +48,11 @@ export default function NewClientPage() {
                 <div className="space-y-2">
                     <label className="text-sm font-semibold text-industrial/70 flex items-center gap-2">
                         <Building2 className="w-4 h-4" />
-                        Company Name
+                        Industry / Company Name
                     </label>
                     <Input
                         required
-                        placeholder="e.g. Job Card System"
+                        placeholder="e.g. Swastik Corru Pack"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         className="bg-kraft-lighter border-kraft-dark/10 focus:border-industrial/30"
@@ -66,7 +66,7 @@ export default function NewClientPage() {
                     </Link>
                     <Button type="submit" disabled={isSubmitting || !name.trim()}>
                         <Save className="w-5 h-5 mr-2" />
-                        {isSubmitting ? 'Creating...' : 'Create Client'}
+                        {isSubmitting ? 'Creating...' : 'Create Industry'}
                     </Button>
                 </div>
             </form>

@@ -1,13 +1,18 @@
 import { notFound } from 'next/navigation';
-import { getJobCardById } from '@/lib/storage';
+import { getJobCardById, getClients } from '@/lib/storage';
 import { JobCardForm } from '@/components/JobCardForm';
 import { Button } from '@/components/ui/Button';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
+export const revalidate = 0;
+
 export default async function EditJobPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const card = await getJobCardById(id);
+    const [card, industries] = await Promise.all([
+        getJobCardById(id),
+        getClients(),
+    ]);
 
     if (!card) {
         notFound();
@@ -26,7 +31,7 @@ export default async function EditJobPage({ params }: { params: Promise<{ id: st
 
             <div className="max-w-4xl mx-auto">
                 <h1 className="text-2xl font-bold text-industrial mb-6">Edit Job Card</h1>
-                <JobCardForm initialData={card} />
+                <JobCardForm initialData={card} initialIndustries={industries} />
             </div>
         </div>
     );

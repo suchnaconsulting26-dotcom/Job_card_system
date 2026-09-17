@@ -5,12 +5,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Package, AlertCircle } from 'lucide-react';
+import { Package, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { signInAction } from '@/lib/auth-actions';
 
 export default function LoginPage() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
 
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -69,9 +70,24 @@ export default function LoginPage() {
                         </div>
                         <Input
                             name="password"
-                            type="password"
+                            type={showPassword ? 'text' : 'password'}
                             placeholder="••••••••"
                             required
+                            rightElement={
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword((prev) => !prev)}
+                                    className="p-1 text-industrial/50 hover:text-industrial transition-colors focus:outline-none"
+                                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    title={showPassword ? 'Hide password' : 'Show password'}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="w-4 h-4" />
+                                    ) : (
+                                        <Eye className="w-4 h-4" />
+                                    )}
+                                </button>
+                            }
                         />
                     </div>
                     <Button className="w-full" type="submit" disabled={isLoading}>

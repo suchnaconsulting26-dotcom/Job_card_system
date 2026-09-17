@@ -68,7 +68,7 @@ export default async function ClientInventoryPage({
                     </Link>
                     <div>
                         <h1 className="text-3xl font-bold text-industrial tracking-tight">{client.name}</h1>
-                        <p className="text-industrial/60 mt-1">Inventory Management</p>
+                        <p className="text-industrial/60 mt-1">Industry Specifications & Items</p>
                     </div>
                 </div>
                 <Link href={`/inventory/${clientId}/new-item`}>

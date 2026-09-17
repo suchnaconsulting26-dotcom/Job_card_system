@@ -2,27 +2,89 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createJobAction, updateJobAction } from '@/lib/actions';
+import { createJobAction, updateJobAction, createIndustryAction, getIndustriesAction } from '@/lib/actions';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Loader2, AlertCircle } from 'lucide-react';
-import { JobCard } from '@/lib/types';
+import { Loader2, AlertCircle, Building2, Check, ChevronDown, Plus } from 'lucide-react';
+import { JobCard, Client } from '@/lib/types';
 
 interface JobCardFormProps {
     initialData?: JobCard;
+    initialIndustries?: Client[];
 }
 
-export function JobCardForm({ initialData }: JobCardFormProps) {
+export function JobCardForm({ initialData, initialIndustries = [] }: JobCardFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [industries, setIndustries] = useState<Client[]>(initialIndustries);
+    const [companyName, setCompanyName] = useState(initialData?.partyName || '');
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const [isCreatingIndustry, setIsCreatingIndustry] = useState(false);
+    const [justAddedMessage, setJustAddedMessage] = useState<string | null>(null);
+
+    const containerRef = useRef<HTMLDivElement>(null);
     const isMounted = useRef(true);
     const router = useRouter();
 
     useEffect(() => {
+        isMounted.current = true;
+        if (initialIndustries.length > 0) {
+            setIndustries(initialIndustries);
+        } else {
+            getIndustriesAction().then((data) => {
+                if (isMounted.current && data) {
+                    setIndustries(data);
+                }
+            }).catch(console.error);
+        }
+
         return () => {
             isMounted.current = false;
         };
+    }, [initialIndustries]);
+
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
+
+    async function handleAddNewIndustry() {
+        const trimmed = companyName.trim();
+        if (!trimmed || isCreatingIndustry) return;
+
+        setIsCreatingIndustry(true);
+        setError(null);
+        try {
+            const result = await createIndustryAction(trimmed);
+            if (result?.error) {
+                setError(result.error);
+            } else if (result?.client) {
+                setIndustries(prev => [...prev, result.client]);
+                setCompanyName(result.client.name);
+                setJustAddedMessage(`"${result.client.name}" registered in Industries!`);
+                setTimeout(() => {
+                    if (isMounted.current) {
+                        setJustAddedMessage(null);
+                    }
+                }, 4000);
+                setIsDropdownOpen(false);
+            }
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Failed to create industry';
+            setError(msg);
+        } finally {
+            if (isMounted.current) {
+                setIsCreatingIndustry(false);
+            }
+        }
+    }
 
     async function handleSubmit(formData: FormData) {
         setError(null);
@@ -71,6 +133,14 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
         }
     }
 
+    const trimmedQuery = companyName.trim().toLowerCase();
+    const filteredIndustries = trimmedQuery
+        ? industries.filter(ind => ind.name.toLowerCase().includes(trimmedQuery))
+        : industries;
+    const exactMatch = industries.some(ind => ind.name.toLowerCase() === trimmedQuery);
+    const showAddNew = trimmedQuery.length > 0 && !exactMatch;
+    const isRegisteredIndustry = industries.some(ind => ind.name.toLowerCase() === trimmedQuery);
+
     return (
         <>
             {error && (
@@ -93,9 +163,145 @@ export function JobCardForm({ initialData }: JobCardFormProps) {
                             </div>
                         </div>
 
-                        <div className="flex border-b-2 border-black">
-                            <div className="flex-1 border-r-2 border-black p-4">
-                                <Input name="partyName" label="COMPANY NAME" required placeholder="e.g. Acme Corp" defaultValue={initialData?.partyName} className="font-bold text-lg" />
+                        <div className="flex border-b-2 border-black relative">
+                            <div className="flex-1 border-r-2 border-black p-4 relative" ref={containerRef}>
+                                <div className="flex items-center justify-between mb-1">
+                                    <label htmlFor="partyNameInput" className="text-sm font-bold text-industrial block">
+                                        COMPANY NAME
+                                    </label>
+                                    {justAddedMessage ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-green-800 bg-green-100 px-2 py-0.5 rounded">
+                                            <Check className="w-3 h-3 text-green-700" />
+                                            {justAddedMessage}
+                                        </span>
+                                    ) : isRegisteredIndustry ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded" title="This company is registered in Industries">
+                                            <Check className="w-3 h-3 text-green-600" />
+                                            Registered Industry
+                                        </span>
+                                    ) : companyName.trim().length > 0 ? (
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-industrial/60 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded" title="Not added to Industries. Will appear on Dashboard only.">
+                                            Dashboard only
+                                        </span>
+                                    ) : null}
+                                </div>
+
+                                <div className="relative">
+                                    <Input
+                                        id="partyNameInput"
+                                        name="partyName"
+                                        required
+                                        placeholder="e.g. Acme Corp"
+                                        value={companyName}
+                                        onChange={(e) => {
+                                            setCompanyName(e.target.value);
+                                            setIsDropdownOpen(true);
+                                        }}
+                                        onFocus={() => setIsDropdownOpen(true)}
+                                        className="font-bold text-lg"
+                                        autoComplete="off"
+                                        rightElement={
+                                            <button
+                                                type="button"
+                                                onClick={() => setIsDropdownOpen(prev => !prev)}
+                                                className="p-1 text-industrial/40 hover:text-industrial transition-colors focus:outline-none"
+                                                tabIndex={-1}
+                                                title="Toggle registered industries list"
+                                            >
+                                                <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                                            </button>
+                                        }
+                                    />
+
+                                    {/* Dropdown Options */}
+                                    {isDropdownOpen && (
+                                        <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 bg-white border-2 border-black shadow-2xl overflow-hidden flex flex-col">
+                                            {/* Header */}
+                                            <div className="px-3 py-1.5 bg-gray-100 border-b border-gray-200 flex items-center justify-between text-[11px] font-bold text-industrial/70 uppercase tracking-wider">
+                                                <span className="flex items-center gap-1.5">
+                                                    <Building2 className="w-3.5 h-3.5" />
+                                                    Registered Industries
+                                                </span>
+                                                <span className="text-[10px] font-normal text-industrial/50 lowercase">
+                                                    {filteredIndustries.length} available
+                                                </span>
+                                            </div>
+
+                                            {/* Options List */}
+                                            <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                                                {filteredIndustries.length > 0 ? (
+                                                    filteredIndustries.map((ind) => {
+                                                        const isSelected = ind.name.toLowerCase() === trimmedQuery;
+                                                        return (
+                                                            <button
+                                                                key={ind.id}
+                                                                type="button"
+                                                                onMouseDown={(e) => {
+                                                                    e.preventDefault();
+                                                                    setCompanyName(ind.name);
+                                                                    setIsDropdownOpen(false);
+                                                                }}
+                                                                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors ${
+                                                                    isSelected ? 'bg-kraft-light/50 font-bold text-black' : 'hover:bg-gray-50 text-industrial'
+                                                                }`}
+                                                            >
+                                                                <span className="flex items-center gap-2 truncate">
+                                                                    <Building2 className="w-4 h-4 text-industrial/40 flex-shrink-0" />
+                                                                    <span className="truncate">{ind.name}</span>
+                                                                </span>
+                                                                {isSelected ? (
+                                                                    <span className="flex items-center gap-1 text-[11px] font-bold text-green-700">
+                                                                        <Check className="w-3.5 h-3.5" /> Selected
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="text-[10px] uppercase font-semibold text-industrial/40 group-hover:text-industrial">
+                                                                        Select
+                                                                    </span>
+                                                                )}
+                                                            </button>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <div className="p-3 text-center text-xs text-gray-500">
+                                                        No existing industry matches &ldquo;{companyName.trim()}&rdquo;
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Add New Industry Option Button */}
+                                            {showAddNew && (
+                                                <div className="p-2 bg-kraft-lighter border-t-2 border-black">
+                                                    <button
+                                                        type="button"
+                                                        disabled={isCreatingIndustry}
+                                                        onMouseDown={(e) => e.preventDefault()}
+                                                        onClick={handleAddNewIndustry}
+                                                        className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-industrial hover:bg-black text-white text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                                                    >
+                                                        <span className="flex items-center gap-2 truncate">
+                                                            {isCreatingIndustry ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin text-white flex-shrink-0" />
+                                                            ) : (
+                                                                <Plus className="w-4 h-4 text-white flex-shrink-0" />
+                                                            )}
+                                                            <span className="truncate">
+                                                                {isCreatingIndustry
+                                                                    ? 'Adding to Industries...'
+                                                                    : <>Add &ldquo;<strong>{companyName.trim()}</strong>&rdquo; as New Industry</>}
+                                                            </span>
+                                                        </span>
+                                                        <span className="text-[10px] bg-white/20 text-white px-2 py-0.5 rounded uppercase tracking-wider flex-shrink-0 font-semibold">
+                                                            Save to Industries
+                                                        </span>
+                                                    </button>
+                                                    <p className="text-[10px] text-industrial/70 mt-1.5 px-1 leading-tight">
+                                                        Creates this industry in the Industries section. If you don&apos;t click Add, this job card will only appear on the Dashboard.
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                             <div className="w-48 p-4">
                                 <Input name="orderDate" type="date" label="DATE" required defaultValue={initialData?.orderDate ? initialData.orderDate.split('T')[0] : ''} />

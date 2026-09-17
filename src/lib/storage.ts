@@ -305,7 +305,7 @@ export async function getClients(): Promise<Client[]> {
     }));
 }
 
-export async function addClient(name: string): Promise<void> {
+export async function addClient(name: string): Promise<Client> {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -313,14 +313,22 @@ export async function addClient(name: string): Promise<void> {
         throw new Error('You must be logged in to do this.');
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('clients')
-        .insert([{ name, user_id: user.id }]);
+        .insert([{ name, user_id: user.id }])
+        .select()
+        .single();
 
     if (error) {
         console.error('Error adding client:', error);
         throw new Error(`Failed to add client: ${error.message}`);
     }
+
+    return {
+        id: data.id,
+        name: data.name,
+        createdAt: data.created_at,
+    };
 }
 
 // Inventory Storage

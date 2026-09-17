@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { addJobCard, updateJobCard, updateJobStatus, deleteJobCard, renumberJobCards, addClient, addInventoryItem, updateInventoryItem, deleteInventoryItem } from './storage';
+import { addJobCard, updateJobCard, updateJobStatus, deleteJobCard, renumberJobCards, addClient, getClients, addInventoryItem, updateInventoryItem, deleteInventoryItem } from './storage';
 import { CreateJobCardInput, JobCard, CreateInventoryItemInput } from './types';
 
 // Validation Schemas
@@ -122,6 +122,31 @@ export async function createClientAction(name: string) {
             throw new Error(`Validation failed: ${message}`);
         }
         throw error;
+    }
+}
+
+export async function createIndustryAction(name: string) {
+    try {
+        const validated = clientNameSchema.parse({ name });
+        const client = await addClient(validated.name);
+        revalidatePath('/inventory');
+        revalidatePath('/');
+        return { success: true, client };
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            const message = error.issues[0]?.message || 'Validation failed';
+            return { error: `Validation failed: ${message}` };
+        }
+        return { error: error instanceof Error ? error.message : 'Failed to create industry' };
+    }
+}
+
+export async function getIndustriesAction() {
+    try {
+        return await getClients();
+    } catch (error) {
+        console.error('Failed to get industries:', error);
+        return [];
     }
 }
 

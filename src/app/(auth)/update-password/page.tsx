@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { Package, AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { Package, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff } from 'lucide-react';
 import { updatePasswordAction } from '@/lib/auth-actions';
 import { createClient } from '@/lib/supabase/client';
 
@@ -14,6 +14,8 @@ export default function UpdatePasswordPage() {
     const [isLoading, setIsLoading] = useState(false);
     const [isVerifying, setIsVerifying] = useState(true);
     const [tokenValid, setTokenValid] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const router = useRouter();
     const searchParams = useSearchParams();
 
@@ -138,18 +140,48 @@ export default function UpdatePasswordPage() {
                                 <Input
                                     label="New Password"
                                     name="password"
-                                    type="password"
+                                    type={showPassword ? 'text' : 'password'}
                                     placeholder="••••••••"
                                     required
                                     minLength={8}
+                                    rightElement={
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword((prev) => !prev)}
+                                            className="p-1 text-industrial/50 hover:text-industrial transition-colors focus:outline-none"
+                                            aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                            title={showPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff className="w-4 h-4" />
+                                            ) : (
+                                                <Eye className="w-4 h-4" />
+                                            )}
+                                        </button>
+                                    }
                                 />
                                 <Input
                                     label="Confirm New Password"
                                     name="confirmPassword"
-                                    type="password"
+                                    type={showConfirmPassword ? 'text' : 'password'}
                                     placeholder="••••••••"
                                     required
                                     minLength={8}
+                                    rightElement={
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword((prev) => !prev)}
+                                            className="p-1 text-industrial/50 hover:text-industrial transition-colors focus:outline-none"
+                                            aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                            title={showConfirmPassword ? 'Hide password' : 'Show password'}
+                                        >
+                                            {showConfirmPassword ? (
+                                                <EyeOff className="w-4 h-4" />
+                                            ) : (
+                                                <Eye className="w-4 h-4" />
+                                            )}
+                                        </button>
+                                    }
                                 />
                                 <Button className="w-full" type="submit" disabled={isLoading}>
                                     {isLoading ? 'Updating Password…' : 'Update Password'}

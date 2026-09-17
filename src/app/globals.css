@@ -105,3 +105,9 @@ body {
     font-size: 1.5rem !important;
   }
 }
+
+/* Hide default browser reveal icon to prevent duplicate toggle icons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
-import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut, User as UserIcon } from 'lucide-react';
+import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut, User as UserIcon, Building2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { createClient } from '@/lib/supabase/client';
 import { signOutAction } from '@/lib/auth-actions';
@@ -95,8 +95,8 @@ export function Sidebar() {
                         onClick={() => setIsOpen(false)}
                         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium ${pathname.startsWith('/inventory') ? 'bg-kraft-dark text-kraft-lighter' : 'hover:bg-kraft-dark/10'}`}
                     >
-                        <Package className="w-5 h-5" />
-                        Inventory
+                        <Building2 className="w-5 h-5" />
+                        Industries
                     </Link>
                 </nav>
 

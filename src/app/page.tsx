@@ -101,7 +101,7 @@ export default async function DashboardPage({
             value={stats.totalJobCards}
             icon={Layers}
             accent="bg-industrial"
-            sub="Dashboard + Inventory"
+            sub="Dashboard + Industries"
           />
           <StatCard
             label="Total Clients"
@@ -110,11 +110,11 @@ export default async function DashboardPage({
             accent="bg-kraft-dark"
           />
           <StatCard
-            label="Inventory Items"
+            label="Industry Items"
             value={stats.totalInventoryItems}
             icon={Package}
             accent="bg-[#6B7280]"
-            sub="Across all clients"
+            sub="Across all industries"
           />
         </div>
 
