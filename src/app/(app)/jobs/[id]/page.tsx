@@ -16,7 +16,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex items-center justify-between print:hidden">
-                <Link href="/">
+                <Link href="/dashboard">
                     <Button variant="ghost" className="pl-0 hover:bg-transparent hover:text-industrial/80">
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to Dashboard

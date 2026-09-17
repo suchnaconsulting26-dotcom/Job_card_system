@@ -80,7 +80,10 @@ export async function signInAction(formData: FormData) {
             return { error: 'Please verify your email before accessing the app. Check your email for verification link.' };
         }
 
-        return { redirectTo: '/' };
+        const requestedRedirect = formData.get('redirectTo') as string;
+        const redirectTo = (requestedRedirect && requestedRedirect.startsWith('/')) ? requestedRedirect : '/dashboard';
+
+        return { redirectTo };
     } catch (error) {
         const message = error instanceof z.ZodError
             ? error.issues[0]?.message || 'Sign in failed'

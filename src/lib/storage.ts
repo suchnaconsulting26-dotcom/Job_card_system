@@ -94,6 +94,14 @@ function mapInputToRecord(data: CreateJobCardInput) {
     };
 }
 
+function isSupabaseConfigured(): boolean {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return false;
+    if (url.includes('placeholder-project') || url.includes('placeholder') || key.includes('placeholder')) return false;
+    return true;
+}
+
 export async function getDashboardStats(): Promise<{
     totalJobCards: number;
     totalInventoryItems: number;
@@ -102,70 +110,99 @@ export async function getDashboardStats(): Promise<{
     inProgressJobCards: number;
     completedJobCards: number;
 }> {
-    const supabase = await createClient();
-
-    const [
-        { count: jobCardCount },
-        { count: inventoryCount },
-        { count: clientCount },
-        { count: pendingCount },
-        { count: inProgressCount },
-        { count: completedCount },
-    ] = await Promise.all([
-        supabase.from('job_cards').select('*', { count: 'exact', head: true }),
-        supabase.from('inventory_items').select('*', { count: 'exact', head: true }),
-        supabase.from('clients').select('*', { count: 'exact', head: true }),
-        supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
-        supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'in-progress'),
-        supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
-    ]);
-
-    return {
-        totalJobCards: jobCardCount ?? 0,
-        totalInventoryItems: inventoryCount ?? 0,
-        totalClients: clientCount ?? 0,
-        pendingJobCards: pendingCount ?? 0,
-        inProgressJobCards: inProgressCount ?? 0,
-        completedJobCards: completedCount ?? 0,
+    const fallbackStats = {
+        totalJobCards: 0,
+        totalInventoryItems: 0,
+        totalClients: 0,
+        pendingJobCards: 0,
+        inProgressJobCards: 0,
+        completedJobCards: 0,
     };
+
+    if (!isSupabaseConfigured()) {
+        return fallbackStats;
+    }
+
+    try {
+        const supabase = await createClient();
+        const [
+            { count: jobCardCount },
+            { count: inventoryCount },
+            { count: clientCount },
+            { count: pendingCount },
+            { count: inProgressCount },
+            { count: completedCount },
+        ] = await Promise.all([
+            supabase.from('job_cards').select('*', { count: 'exact', head: true }),
+            supabase.from('inventory_items').select('*', { count: 'exact', head: true }),
+            supabase.from('clients').select('*', { count: 'exact', head: true }),
+            supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+            supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'in-progress'),
+            supabase.from('job_cards').select('*', { count: 'exact', head: true }).eq('status', 'completed'),
+        ]);
+
+        return {
+            totalJobCards: jobCardCount ?? 0,
+            totalInventoryItems: inventoryCount ?? 0,
+            totalClients: clientCount ?? 0,
+            pendingJobCards: pendingCount ?? 0,
+            inProgressJobCards: inProgressCount ?? 0,
+            completedJobCards: completedCount ?? 0,
+        };
+    } catch {
+        return fallbackStats;
+    }
 }
 
 export async function getJobCards(): Promise<JobCard[]> {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from('job_cards')
-        .select('*')
-        .order('job_no', { ascending: false });
-
-    if (error) {
-        console.error('Error fetching job cards:', {
-            message: error.message,
-            code: error.code,
-            details: error.details,
-            hint: error.hint
-        });
+    if (!isSupabaseConfigured()) {
         return [];
     }
 
-    return (data || []).map(mapRecordToJobCard);
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from('job_cards')
+            .select('*')
+            .order('job_no', { ascending: false });
+
+        if (error) {
+            if (error.message && error.code !== 'PGRST116' && error.code !== '42501' && error.code !== 'PGRST301') {
+                console.warn('Note: Could not fetch job cards from Supabase:', error.message);
+            }
+            return [];
+        }
+
+        return (data || []).map(mapRecordToJobCard);
+    } catch {
+        return [];
+    }
 }
 
 export async function getJobCardById(id: string): Promise<JobCard | undefined> {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from('job_cards')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-    if (error) {
-        if (error.code !== 'PGRST116') {
-            console.error('Error fetching job card by id:', error);
-        }
+    if (!isSupabaseConfigured()) {
         return undefined;
     }
 
-    return mapRecordToJobCard(data);
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from('job_cards')
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (error) {
+            if (error.code !== 'PGRST116' && error.message) {
+                console.warn('Note: Could not fetch job card by id:', error.message);
+            }
+            return undefined;
+        }
+
+        return mapRecordToJobCard(data);
+    } catch {
+        return undefined;
+    }
 }
 
 export async function addJobCard(data: CreateJobCardInput): Promise<void> {
@@ -287,22 +324,32 @@ export async function renumberJobCards(): Promise<void> {
 
 // Client Storage
 export async function getClients(): Promise<Client[]> {
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .order('name');
-
-    if (error) {
-        console.error('Error fetching clients:', error);
+    if (!isSupabaseConfigured()) {
         return [];
     }
 
-    return (data || []).map(record => ({
-        id: record.id,
-        name: record.name,
-        createdAt: record.created_at
-    }));
+    try {
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from('clients')
+            .select('*')
+            .order('name');
+
+        if (error) {
+            if (error.message && error.code !== '42501' && error.code !== 'PGRST301') {
+                console.warn('Note: Could not fetch clients:', error.message);
+            }
+            return [];
+        }
+
+        return (data || []).map(record => ({
+            id: record.id,
+            name: record.name,
+            createdAt: record.created_at
+        }));
+    } catch {
+        return [];
+    }
 }
 
 export async function addClient(name: string): Promise<Client> {
@@ -333,21 +380,28 @@ export async function addClient(name: string): Promise<Client> {
 
 // Inventory Storage
 export async function getInventoryItems(clientId?: string): Promise<InventoryItem[]> {
-    const supabase = await createClient();
-    let query = supabase.from('inventory_items').select('*').order('created_at', { ascending: false });
-
-    if (clientId) {
-        query = query.eq('client_id', clientId);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-        console.error('Error fetching inventory items:', error);
+    if (!isSupabaseConfigured()) {
         return [];
     }
 
-    return (data || []).map(record => ({
+    try {
+        const supabase = await createClient();
+        let query = supabase.from('inventory_items').select('*').order('created_at', { ascending: false });
+
+        if (clientId) {
+            query = query.eq('client_id', clientId);
+        }
+
+        const { data, error } = await query;
+
+        if (error) {
+            if (error.message && error.code !== '42501' && error.code !== 'PGRST301') {
+                console.warn('Note: Could not fetch inventory items:', error.message);
+            }
+            return [];
+        }
+
+        return (data || []).map(record => ({
         id: record.id,
         clientId: record.client_id,
         name: record.name,
@@ -367,6 +421,9 @@ export async function getInventoryItems(clientId?: string): Promise<InventoryIte
         createdAt: record.created_at,
         updatedAt: record.updated_at
     }));
+    } catch {
+        return [];
+    }
 }
 
 export async function getInventoryItemById(id: string): Promise<InventoryItem | undefined> {

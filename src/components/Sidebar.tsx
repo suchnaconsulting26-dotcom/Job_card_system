@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
-import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut, User as UserIcon, Building2 } from 'lucide-react';
+import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut, User as UserIcon, Building2, Globe } from 'lucide-react';
 import { Button } from './ui/Button';
 import { createClient } from '@/lib/supabase/client';
 import { signOutAction } from '@/lib/auth-actions';
@@ -75,9 +75,9 @@ export function Sidebar() {
 
                 <nav className="space-y-2 mt-16 md:mt-0 flex-1">
                     <Link
-                        href="/"
+                        href="/dashboard"
                         onClick={() => setIsOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium ${pathname === '/' ? 'bg-kraft-dark text-kraft-lighter' : 'hover:bg-kraft-dark/10'}`}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium ${pathname === '/dashboard' ? 'bg-kraft-dark text-kraft-lighter' : 'hover:bg-kraft-dark/10'}`}
                     >
                         <LayoutDashboard className="w-5 h-5" />
                         Dashboard
@@ -97,6 +97,14 @@ export function Sidebar() {
                     >
                         <Building2 className="w-5 h-5" />
                         Industries
+                    </Link>
+                    <Link
+                        href="/"
+                        onClick={() => setIsOpen(false)}
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium text-industrial/70 hover:bg-kraft-dark/10 hover:text-industrial"
+                    >
+                        <Globe className="w-5 h-5" />
+                        Public Website
                     </Link>
                 </nav>
 

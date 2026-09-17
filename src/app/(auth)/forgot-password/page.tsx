@@ -36,9 +36,14 @@ export default function ForgotPasswordPage() {
     return (
         <div className="space-y-8">
             <div className="text-center">
-                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-industrial text-white mb-4">
-                    <Package className="w-8 h-8" />
-                </div>
+                <Link
+                    href="/"
+                    className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-industrial text-white mb-4 hover:bg-black hover:scale-105 active:scale-95 transition-all shadow-md group cursor-pointer"
+                    title="Return to Website"
+                    aria-label="Return to Website"
+                >
+                    <Package className="w-8 h-8 group-hover:rotate-6 transition-transform" />
+                </Link>
                 <h1 className="text-2xl font-bold text-industrial tracking-tight">Reset Password</h1>
                 <p className="text-industrial/60 mt-1">
                     {success ? 'Check your inbox' : 'We\'ll send you a password reset link'}

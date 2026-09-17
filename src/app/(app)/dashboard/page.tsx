@@ -18,7 +18,7 @@ function StatCard({
   label: string;
   value: number;
   icon: React.ElementType;
-  accent: string;   // tailwind bg class for the icon bubble
+  accent: string;
   sub?: string;
 }) {
   return (

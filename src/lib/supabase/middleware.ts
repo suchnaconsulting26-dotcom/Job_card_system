@@ -36,26 +36,37 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
+    const isPublicRoute =
+        request.nextUrl.pathname === '/' ||
+        request.nextUrl.pathname.startsWith('/login') ||
+        request.nextUrl.pathname.startsWith('/signup') ||
+        request.nextUrl.pathname.startsWith('/forgot-password') ||
+        request.nextUrl.pathname.startsWith('/update-password');
+
     const isAuthRoute =
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/signup') ||
         request.nextUrl.pathname.startsWith('/forgot-password') ||
         request.nextUrl.pathname.startsWith('/update-password');
 
-    // If there's no user and the route is NOT an auth route (meaning it's protected)
-    if (!user && !isAuthRoute) {
+    // If there's no user and the route is NOT public (meaning it's a protected app route)
+    if (!user && !isPublicRoute) {
         if (isServerAction) {
             return supabaseResponse
         }
         const url = request.nextUrl.clone()
         url.pathname = '/login'
+        const fullDestination = request.nextUrl.pathname + request.nextUrl.search;
+        if (fullDestination && fullDestination !== '/') {
+            url.searchParams.set('redirectTo', fullDestination);
+        }
         return NextResponse.redirect(url)
     }
 
     // If there IS a user and they try to go to an auth route (they're already logged in)
     if (user && isAuthRoute) {
         const url = request.nextUrl.clone();
-        url.pathname = '/';
+        url.pathname = '/dashboard';
         return NextResponse.redirect(url);
     }
 
