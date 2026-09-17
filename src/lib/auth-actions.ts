@@ -107,7 +107,7 @@ export async function resetPasswordAction(formData: FormData) {
         const origin = formData.get('origin') as string || '';
         
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: origin ? `${origin}/update-password` : undefined,
+            redirectTo: origin ? `${origin}/auth/callback?next=/update-password` : undefined,
         });
 
         if (error) {
@@ -133,7 +133,7 @@ export async function updatePasswordAction(formData: FormData) {
             throw new Error(error.message);
         }
 
-        return { redirectTo: '/' };
+        return { redirectTo: '/dashboard' };
     } catch (error) {
         return { error: error instanceof Error ? error.message : 'Update failed' };
     }

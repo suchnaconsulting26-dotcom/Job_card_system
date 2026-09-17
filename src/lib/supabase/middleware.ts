@@ -41,13 +41,16 @@ export async function updateSession(request: NextRequest) {
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/signup') ||
         request.nextUrl.pathname.startsWith('/forgot-password') ||
-        request.nextUrl.pathname.startsWith('/update-password');
+        request.nextUrl.pathname.startsWith('/update-password') ||
+        request.nextUrl.pathname.startsWith('/auth');
 
-    const isAuthRoute =
+    // Guest-only routes: users who are already logged in should be redirected to /dashboard.
+    // NOTE: /update-password is intentionally NOT guest-only, because users resetting their
+    // password have a recovery session and MUST be allowed to stay on /update-password!
+    const isGuestOnlyRoute =
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/signup') ||
-        request.nextUrl.pathname.startsWith('/forgot-password') ||
-        request.nextUrl.pathname.startsWith('/update-password');
+        request.nextUrl.pathname.startsWith('/forgot-password');
 
     // If there's no user and the route is NOT public (meaning it's a protected app route)
     if (!user && !isPublicRoute) {
@@ -63,8 +66,8 @@ export async function updateSession(request: NextRequest) {
         return NextResponse.redirect(url)
     }
 
-    // If there IS a user and they try to go to an auth route (they're already logged in)
-    if (user && isAuthRoute) {
+    // If there IS a user and they try to go to a guest-only route (like /login or /signup)
+    if (user && isGuestOnlyRoute) {
         const url = request.nextUrl.clone();
         url.pathname = '/dashboard';
         return NextResponse.redirect(url);
