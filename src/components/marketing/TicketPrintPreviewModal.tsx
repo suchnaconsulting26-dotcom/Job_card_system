@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Printer,
   X,
@@ -80,19 +81,25 @@ export function TicketPrintPreviewModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  // Lock body scroll when modal is open
+  // Lock body scroll and set printing class when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      document.body.classList.add('is-printing-modal');
     } else {
       document.body.style.overflow = 'unset';
+      document.body.classList.remove('is-printing-modal');
     }
     return () => {
       document.body.style.overflow = 'unset';
+      document.body.classList.remove('is-printing-modal');
     };
   }, [isOpen]);
 
-  if (!isOpen) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!isOpen || !mounted) return null;
 
   const handlePrint = () => {
     window.print();
@@ -571,15 +578,15 @@ Printing: ${ticket.printingColor}`;
     );
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto print:p-0 print:bg-white print:static"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md overflow-y-auto print:p-0 print:bg-white print:block print:relative print:inset-auto print:overflow-visible print-preview-portal"
       role="dialog"
       aria-modal="true"
       aria-labelledby="preview-modal-title"
     >
       {/* Modal Container */}
-      <div className="relative w-full max-w-5xl bg-[#1e1e1e] text-kraft-lighter rounded-xl border border-kraft-dark/30 shadow-2xl flex flex-col max-h-[96vh] overflow-hidden print:border-none print:shadow-none print:bg-white print:max-h-none print:w-auto">
+      <div className="relative w-full max-w-5xl bg-[#1e1e1e] text-kraft-lighter rounded-xl border border-kraft-dark/30 shadow-2xl flex flex-col max-h-[96vh] overflow-hidden print:border-none print:shadow-none print:bg-white print:max-h-none print:w-auto print:overflow-visible">
         
         {/* Top Header Toolbar (Hidden in print) */}
         <div className="px-4 py-3 bg-industrial border-b border-kraft-dark/30 flex flex-wrap items-center justify-between gap-3 flex-shrink-0 print:hidden">
@@ -803,4 +810,6 @@ Printing: ${ticket.printingColor}`;
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 }
