@@ -47,9 +47,16 @@ function LoginForm() {
             )}
 
             {error && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3 text-red-700 text-sm">
-                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                    <p>{error}</p>
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 text-red-700 text-sm">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                        <p className="font-semibold">{error}</p>
+                        {error.includes('.env.local') && (
+                            <p className="text-xs text-red-600 font-normal mt-1">
+                                Please replace the placeholder values in your <span className="font-mono font-bold bg-red-100 px-1 py-0.5 rounded">.env.local</span> file with your actual Supabase Project URL and Anon Key.
+                            </p>
+                        )}
+                    </div>
                 </div>
             )}
 

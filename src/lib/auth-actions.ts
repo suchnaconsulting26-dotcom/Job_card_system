@@ -16,8 +16,34 @@ const signInSchema = z.object({
     password: z.string().min(1, 'Password is required'),
 });
 
+function isSupabaseConfigured(): boolean {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    if (!url || !key) return false;
+    if (url.includes('placeholder-project') || url.includes('placeholder') || key.includes('placeholder')) return false;
+    return true;
+}
+
+function sanitizeAuthError(error: unknown, fallback: string): string {
+    if (error instanceof z.ZodError) {
+        return error.issues[0]?.message || fallback;
+    }
+    const raw = error instanceof Error ? error.message : fallback;
+    const lower = raw.toLowerCase();
+    if (lower.includes('fetch failed') || lower.includes('enotfound') || lower.includes('failed to fetch')) {
+        return 'Unable to connect to Supabase authentication server. Please check your internet connection and verify that your Supabase credentials in .env.local are valid and active.';
+    }
+    return raw;
+}
+
 export async function signUpAction(formData: FormData) {
     try {
+        if (!isSupabaseConfigured()) {
+            return {
+                error: 'Supabase credentials are not configured in .env.local. Please set your real NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+            };
+        }
+
         const supabase = await createServerSideClient();
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -47,17 +73,18 @@ export async function signUpAction(formData: FormData) {
 
         return { redirectTo: '/' };
     } catch (error) {
-        const message = error instanceof z.ZodError
-            ? error.issues[0]?.message || 'Sign up failed'
-            : error instanceof Error
-                ? error.message
-                : 'Sign up failed';
-        return { error: message };
+        return { error: sanitizeAuthError(error, 'Sign up failed') };
     }
 }
 
 export async function signInAction(formData: FormData) {
     try {
+        if (!isSupabaseConfigured()) {
+            return {
+                error: 'Supabase credentials are not configured in .env.local. Please set your real NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+            };
+        }
+
         const supabase = await createServerSideClient();
         const email = formData.get('email') as string;
         const password = formData.get('password') as string;
@@ -85,12 +112,7 @@ export async function signInAction(formData: FormData) {
 
         return { redirectTo };
     } catch (error) {
-        const message = error instanceof z.ZodError
-            ? error.issues[0]?.message || 'Sign in failed'
-            : error instanceof Error
-                ? error.message
-                : 'Sign in failed';
-        return { error: message };
+        return { error: sanitizeAuthError(error, 'Sign in failed') };
     }
 }
 
@@ -102,6 +124,12 @@ export async function signOutAction() {
 
 export async function resetPasswordAction(formData: FormData) {
     try {
+        if (!isSupabaseConfigured()) {
+            return {
+                error: 'Supabase credentials are not configured in .env.local. Please set your real NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+            };
+        }
+
         const supabase = await createServerSideClient();
         const email = formData.get('email') as string;
         const origin = formData.get('origin') as string || '';
@@ -116,12 +144,18 @@ export async function resetPasswordAction(formData: FormData) {
 
         return { success: true };
     } catch (error) {
-        return { error: error instanceof Error ? error.message : 'Reset failed' };
+        return { error: sanitizeAuthError(error, 'Reset failed') };
     }
 }
 
 export async function updatePasswordAction(formData: FormData) {
     try {
+        if (!isSupabaseConfigured()) {
+            return {
+                error: 'Supabase credentials are not configured in .env.local. Please set your real NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+            };
+        }
+
         const supabase = await createServerSideClient();
         const password = formData.get('password') as string;
 
@@ -135,6 +169,6 @@ export async function updatePasswordAction(formData: FormData) {
 
         return { redirectTo: '/dashboard' };
     } catch (error) {
-        return { error: error instanceof Error ? error.message : 'Update failed' };
+        return { error: sanitizeAuthError(error, 'Update failed') };
     }
 }
