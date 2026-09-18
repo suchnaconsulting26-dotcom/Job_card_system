@@ -57,6 +57,7 @@ body {
   header,
   nav,
   aside,
+  footer,
   .no-print {
     display: none !important;
   }
@@ -72,36 +73,77 @@ body {
     left: 0;
     top: 0;
     width: 190mm;
-    /* A4 width (210mm) - margins */
+    /* A4 width (210mm) - 2x10mm margins */
     height: 138mm;
     /* Slightly less than half of A4 height (297mm / 2 = 148.5mm) */
     margin: 0;
     border: 2px solid black !important;
     box-shadow: none !important;
-    padding: 2mm !important;
+    padding: 1.5mm !important;
     display: flex !important;
     flex-direction: row !important;
     overflow: hidden;
+    background: white !important;
+  }
+
+  /* Second duplicate ticket for Paper-Saver mode (2 tickets per A4 sheet) */
+  .job-card-print-second,
+  .job-card-print-second * {
+    visibility: visible;
+  }
+
+  .job-card-print-second {
+    position: absolute;
+    left: 0;
+    top: 148.5mm;
+    width: 190mm;
+    height: 138mm;
+    margin: 0;
+    border: 2px solid black !important;
+    box-shadow: none !important;
+    padding: 1.5mm !important;
+    display: flex !important;
+    flex-direction: row !important;
+    overflow: hidden;
+    background: white !important;
+  }
+
+  /* Center dashed cut line for 2-ticket print mode */
+  .job-card-cut-line-print {
+    position: absolute;
+    left: 0;
+    top: 143.5mm;
+    width: 190mm;
+    border-top: 1px dashed #666 !important;
+    visibility: visible !important;
+    display: block !important;
   }
 
   /* Ensure the content inside fits the half-page */
   .job-card-print p,
   .job-card-print span,
   .job-card-print h1,
-  .job-card-print h3 {
+  .job-card-print h3,
+  .job-card-print-second p,
+  .job-card-print-second span,
+  .job-card-print-second h1,
+  .job-card-print-second h3 {
     font-size: 0.85rem !important;
     line-height: tight !important;
   }
 
-  .job-card-print h1 {
+  .job-card-print h1,
+  .job-card-print-second h1 {
     font-size: 1.25rem !important;
   }
 
-  .job-card-print .text-2xl {
+  .job-card-print .text-2xl,
+  .job-card-print-second .text-2xl {
     font-size: 1.1rem !important;
   }
 
-  .job-card-print .text-3xl {
+  .job-card-print .text-3xl,
+  .job-card-print-second .text-3xl {
     font-size: 1.5rem !important;
   }
 }

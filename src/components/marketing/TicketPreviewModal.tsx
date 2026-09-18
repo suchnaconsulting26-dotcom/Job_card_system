@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { Printer, Check, Copy, FileText, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Printer, Check, Copy, FileText, CheckCircle2, ArrowRight, Maximize2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 import Link from 'next/link';
 import { JobCard } from '@/lib/types';
+import { TicketPrintPreviewModal, TicketData } from './TicketPrintPreviewModal';
 
 interface TicketPreviewModalProps {
   realJob?: JobCard;
@@ -14,8 +15,9 @@ interface TicketPreviewModalProps {
 export function TicketPreviewModal({ realJob }: TicketPreviewModalProps) {
   const [copied, setCopied] = useState(false);
   const [useRealJob, setUseRealJob] = useState(Boolean(realJob));
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const handleSimulatePrint = () => {
+  const handleQuickPrint = () => {
     window.print();
   };
 
@@ -38,6 +40,27 @@ export function TicketPreviewModal({ realJob }: TicketPreviewModalProps) {
   const vehicleNo = isReal && realJob && realJob.vehicleNumber ? realJob.vehicleNumber : 'MH-12-RN-4819';
   const remarks = isReal && realJob ? realJob.remarks : 'Export grade packaging. Ensure ventilation hole punch dies are 100% slug-free. Apply high moisture-resistant starch gum.';
 
+  const ticketData: TicketData = {
+    jobNo,
+    partyName: party,
+    boxName: box,
+    orderDate: isReal && realJob ? realJob.orderDate.split('T')[0] : '2026-09-17',
+    boxSize,
+    cuttingSize,
+    decalSize,
+    quantity: qty,
+    topPaper,
+    liner,
+    numberOfPapers: numPapers,
+    gsm,
+    ply,
+    printingColor: printing,
+    deliveryDate: dispatchDate,
+    readyQuantity: readyQty,
+    vehicleNumber: vehicleNo,
+    remarks,
+  };
+
   return (
     <section id="print-preview" className="py-20 bg-kraft-lighter/50 relative border-t border-kraft-dark/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -59,12 +82,23 @@ export function TicketPreviewModal({ realJob }: TicketPreviewModalProps) {
           
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
             <Button
-              onClick={handleSimulatePrint}
+              onClick={() => setIsPreviewOpen(true)}
               size="sm"
               className="bg-industrial hover:bg-industrial/90 text-kraft-lighter font-bold flex items-center gap-2 shadow-xs cursor-pointer"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-4 h-4 text-yellow-400" />
               <span>Test Print This Sample Ticket</span>
+            </Button>
+
+            <Button
+              onClick={handleQuickPrint}
+              size="sm"
+              variant="outline"
+              className="border-2 border-industrial text-industrial font-bold hover:bg-industrial/10 flex items-center gap-2 cursor-pointer"
+              title="Quickly send directly to browser printer"
+            >
+              <Sparkles className="w-4 h-4 text-industrial" />
+              <span>Quick Print</span>
             </Button>
 
             {realJob ? (
@@ -104,15 +138,26 @@ export function TicketPreviewModal({ realJob }: TicketPreviewModalProps) {
               <span className="w-2 h-2 rounded-full bg-green-400" />
               {isReal ? `LIVE JOB CARD #${realJob?.jobNo} (FROM DATABASE)` : 'SAMPLE PHYSICAL JOB TICKET (A4 HALF-PAGE SPEC)'}
             </span>
-            {realJob && (
+            <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setUseRealJob(!useRealJob)}
-                className="text-[10px] uppercase font-mono font-bold bg-kraft-dark px-2 py-0.5 rounded hover:bg-kraft-light hover:text-industrial transition-colors cursor-pointer"
+                onClick={() => setIsPreviewOpen(true)}
+                className="text-[10px] uppercase font-mono font-bold bg-yellow-400 text-industrial px-2.5 py-0.5 rounded hover:bg-yellow-300 transition-colors cursor-pointer flex items-center gap-1"
+                title="View in A4 Paper Layout"
               >
-                {useRealJob ? 'Show Sample Ticket' : 'Show Live DB Ticket'}
+                <Maximize2 className="w-3 h-3" />
+                <span>A4 Layout Preview</span>
               </button>
-            )}
+              {realJob && (
+                <button
+                  type="button"
+                  onClick={() => setUseRealJob(!useRealJob)}
+                  className="text-[10px] uppercase font-mono font-bold bg-kraft-dark px-2 py-0.5 rounded hover:bg-kraft-light hover:text-industrial transition-colors cursor-pointer"
+                >
+                  {useRealJob ? 'Show Sample Ticket' : 'Show Live DB Ticket'}
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Job Card Blueprint Table */}
@@ -323,6 +368,14 @@ export function TicketPreviewModal({ realJob }: TicketPreviewModalProps) {
         </div>
 
       </div>
+
+      {/* Interactive A4 Sheet Print Preview Modal */}
+      <TicketPrintPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        ticket={ticketData}
+        isReal={isReal}
+      />
     </section>
   );
 }
