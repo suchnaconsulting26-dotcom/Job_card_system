@@ -83,7 +83,7 @@ body {
     width: 190mm;
     /* A4 width (210mm) - 2x10mm margins */
     height: 138mm;
-    /* Slightly less than half of A4 height (297mm / 2 = 148.5mm) */
+    /* Fits within half of available height (277mm / 2 = 138.5mm) */
     margin: 0;
     border: 2px solid black !important;
     box-shadow: none !important;
@@ -103,7 +103,7 @@ body {
   .job-card-print-second {
     position: absolute;
     left: 0;
-    top: 148.5mm;
+    top: 138.5mm; /* 148.5mm physical center - 10mm top margin */
     width: 190mm;
     height: 138mm;
     margin: 0;
@@ -120,7 +120,7 @@ body {
   .job-card-cut-line-print {
     position: absolute;
     left: 0;
-    top: 143.5mm;
+    top: 138.2mm; /* slightly above the second ticket */
     width: 190mm;
     border-top: 1px dashed #666 !important;
     visibility: visible !important;
