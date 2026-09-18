@@ -45,7 +45,6 @@ interface TicketPrintPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   ticket: TicketData;
-  isReal?: boolean;
 }
 
 const STAGES = [
@@ -64,7 +63,6 @@ export function TicketPrintPreviewModal({
   isOpen,
   onClose,
   ticket,
-  isReal = false,
 }: TicketPrintPreviewModalProps) {
   const [ticketMode, setTicketMode] = useState<'single' | 'double'>('single');
   const [colorMode, setColorMode] = useState<'color' | 'mono'>('color');
@@ -322,14 +320,14 @@ Printing: ${ticket.printingColor}`;
                 }}
               >
                 <span className="text-[9px] font-bold block text-gray-700 self-start uppercase">
-                  ORDER QTY
+                  ORDER QUANTITY
                 </span>
                 <p className="text-2xl font-black font-mono text-black">
                   {typeof ticket.quantity === 'number'
                     ? ticket.quantity.toLocaleString()
                     : ticket.quantity}
                 </p>
-                <span className="text-[8px] uppercase font-bold text-gray-600">PCS</span>
+                <span className="text-[8px] uppercase font-bold text-gray-600">PIECES</span>
               </div>
 
               {/* Row 2 of Grid: Papers */}
@@ -565,7 +563,7 @@ Printing: ${ticket.printingColor}`;
             }}
           >
             <p className="text-[8px] font-mono uppercase text-gray-600 font-bold">
-              OPERATOR SIGNATURE
+              OPERATOR SIGNATURE REQUIRED
             </p>
           </div>
         </div>

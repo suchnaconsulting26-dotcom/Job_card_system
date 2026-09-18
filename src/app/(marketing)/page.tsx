@@ -54,7 +54,7 @@ export default async function MarketingHomePage() {
       <HeroSection liveStats={liveStats} latestJob={latestJob} />
       <BoxCalculator />
       <WorkflowVisualizer />
-      <TicketPreviewModal realJob={latestJob} />
+      <TicketPreviewModal />
       <FeatureGrid />
       <IndustrySolutions />
       <RoiCalculator />
