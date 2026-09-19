@@ -474,7 +474,7 @@ export async function addInventoryItem(data: CreateInventoryItemInput): Promise<
     const { error } = await supabase
         .from('inventory_items')
         .insert([{
-            client_id: data.clientId,
+            client_id: data.clientId ? data.clientId : null,
             name: data.name,
             description: data.description,
             quantity: data.quantity,

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { addJobCard, updateJobCard, updateJobStatus, deleteJobCard, renumberJobCards, addClient, getClients, addInventoryItem, updateInventoryItem, deleteInventoryItem } from './storage';
+import { addJobCard, updateJobCard, updateJobStatus, deleteJobCard, renumberJobCards, addClient, getClients, addInventoryItem, updateInventoryItem, deleteInventoryItem, getInventoryItems } from './storage';
 import { CreateJobCardInput, JobCard, CreateInventoryItemInput } from './types';
 
 // Validation Schemas
@@ -147,6 +147,55 @@ export async function getIndustriesAction() {
     } catch (error) {
         console.error('Failed to get industries:', error);
         return [];
+    }
+}
+
+export async function getInventoryItemsAction(clientId?: string) {
+    try {
+        return await getInventoryItems(clientId);
+    } catch (error) {
+        console.error('Failed to get inventory items:', error);
+        return [];
+    }
+}
+
+export async function createQuickItemAction(data: {
+    name: string;
+    itemCode?: string;
+    clientId?: string;
+    boxSize?: { l: string; w: string; h: string };
+    ply?: string;
+    topPaper?: string;
+    liner?: string;
+    gsm?: string;
+    cuttingSize?: string;
+    decalSize?: string;
+    printing?: string;
+    stitching?: boolean;
+    remarks?: string;
+}) {
+    try {
+        await addInventoryItem({
+            clientId: data.clientId || '',
+            name: data.name,
+            itemCode: data.itemCode,
+            description: data.remarks,
+            quantity: 0,
+            unit: 'pcs',
+            boxSize: data.boxSize,
+            ply: data.ply,
+            topPaper: data.topPaper,
+            liner: data.liner,
+            gsm: data.gsm,
+            cuttingSize: data.cuttingSize,
+            decalSize: data.decalSize,
+            printing: data.printing,
+            stitching: data.stitching,
+        });
+        revalidatePath('/inventory');
+        return { success: true };
+    } catch (error) {
+        return { error: error instanceof Error ? error.message : 'Failed to save item' };
     }
 }
 

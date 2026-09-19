@@ -20,11 +20,15 @@ import {
   Building2,
   HelpCircle,
   ChevronDown,
-  Plus
+  Plus,
+  Tag,
+  Box,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Client } from '@/lib/types';
-import { getIndustriesAction, createIndustryAction } from '@/lib/actions';
+import { getIndustriesAction, createIndustryAction, getInventoryItemsAction, createQuickItemAction } from '@/lib/actions';
+import { MasterCatalogItem, mergeCatalogItems, saveLocalCustomItem } from '@/lib/item-catalog';
 import {
   CalculatorPreferences,
   DEFAULT_CALCULATOR_PREFERENCES,
@@ -58,6 +62,13 @@ export default function UniversalCalculatorPage() {
   const clientDropdownRef = useRef<HTMLDivElement>(null);
   const isMounted = useRef(true);
 
+  // Master Item Catalog Selection & Quick Save
+  const [catalogItems, setCatalogItems] = useState<MasterCatalogItem[]>([]);
+  const [isItemDropdownOpen, setIsItemDropdownOpen] = useState(false);
+  const [isSavingItem, setIsSavingItem] = useState(false);
+  const [itemLoadedMessage, setItemLoadedMessage] = useState<string | null>(null);
+  const itemContainerRef = useRef<HTMLDivElement>(null);
+
   // Board Spec
   const [ply, setPly] = useState<'3' | '5' | '7'>('5');
   const [layers, setLayers] = useState<PlyLayerSpec[]>([]);
@@ -69,7 +80,7 @@ export default function UniversalCalculatorPage() {
   const [customFlap, setCustomFlap] = useState<number>(35);
   const [customTrimWaste, setCustomTrimWaste] = useState<number>(5);
 
-  // Load preferences and industries on mount
+  // Load preferences, industries, and item catalog on mount
   useEffect(() => {
     isMounted.current = true;
     const prefs = loadCalculatorPreferences();
@@ -87,12 +98,25 @@ export default function UniversalCalculatorPage() {
       })
       .catch(console.error);
 
+    getInventoryItemsAction()
+      .then((dbItems) => {
+        if (isMounted.current) {
+          setCatalogItems(mergeCatalogItems(dbItems || []));
+        }
+      })
+      .catch((err) => {
+        console.error('Failed to load item catalog:', err);
+        if (isMounted.current) {
+          setCatalogItems(mergeCatalogItems([]));
+        }
+      });
+
     return () => {
       isMounted.current = false;
     };
   }, []);
 
-  // Handle click outside to close client dropdown
+  // Handle click outside to close dropdowns
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -100,6 +124,12 @@ export default function UniversalCalculatorPage() {
         !clientDropdownRef.current.contains(event.target as Node)
       ) {
         setIsDropdownOpen(false);
+      }
+      if (
+        itemContainerRef.current &&
+        !itemContainerRef.current.contains(event.target as Node)
+      ) {
+        setIsItemDropdownOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -378,6 +408,171 @@ export default function UniversalCalculatorPage() {
     return `/create?${params.toString()}`;
   }, [length, width, height, calc, quantity, ply, layers, printingColors, joint, boxName, partyName]);
 
+  // Item Catalog search helpers
+  const trimmedItemQuery = boxName.trim().toLowerCase();
+  const filteredCatalogItems = catalogItems.filter((item) => {
+    if (!trimmedItemQuery) return true;
+    return (
+      item.name.toLowerCase().includes(trimmedItemQuery) ||
+      (item.itemCode && item.itemCode.toLowerCase().includes(trimmedItemQuery)) ||
+      (item.clientName && item.clientName.toLowerCase().includes(trimmedItemQuery))
+    );
+  });
+  const isExactItemMatch = catalogItems.some(
+    (item) =>
+      item.name.toLowerCase() === trimmedItemQuery ||
+      (item.itemCode && item.itemCode.toLowerCase() === trimmedItemQuery)
+  );
+
+  // Auto-fill all specifications from chosen catalog item
+  const handleSelectItem = (item: MasterCatalogItem) => {
+    setBoxName(item.name);
+    if (item.clientName && (!partyName || partyName === 'Maruti Agro Foods Exports Pvt Ltd')) {
+      setPartyName(item.clientName);
+    }
+    if (item.boxSize) {
+      if (item.boxSize.l) setLength(Number(item.boxSize.l) || 400);
+      if (item.boxSize.w) setWidth(Number(item.boxSize.w) || 300);
+      if (item.boxSize.h) setHeight(Number(item.boxSize.h) || 250);
+    }
+
+    // Determine target ply
+    const targetPly: '3' | '5' | '7' =
+      item.ply === '3' || item.ply === '7' ? item.ply : '5';
+    setPly(targetPly);
+
+    // Build layers with defaults for targetPly, then enrich with item specs
+    let newLayers = createDefaultLayers(targetPly, preferences);
+
+    // Parse GSM numbers if provided (e.g., "230 / 150 / 140 / 150 / 180" or "180, 140, 150")
+    if (item.gsm) {
+      const gsmMatches = item.gsm.match(/\d+/g);
+      if (gsmMatches && gsmMatches.length > 0) {
+        newLayers = newLayers.map((layer, idx) => {
+          if (gsmMatches[idx]) {
+            const parsedGsm = parseInt(gsmMatches[idx], 10);
+            if (!isNaN(parsedGsm) && parsedGsm > 50 && parsedGsm < 600) {
+              return { ...layer, gsm: parsedGsm };
+            }
+          }
+          return layer;
+        });
+      }
+    }
+
+    // Assign topPaper / liner if available
+    if (item.topPaper) {
+      const matchedGrade = (Object.keys(preferences.paperRates) as PaperGrade[]).find(
+        (grade) => grade.toLowerCase() === item.topPaper?.toLowerCase()
+      );
+      if (matchedGrade) {
+        newLayers[0] = {
+          ...newLayers[0],
+          paperGrade: matchedGrade,
+          ratePerKg: preferences.paperRates[matchedGrade] || newLayers[0].ratePerKg,
+          bf: preferences.paperDefaultBf[matchedGrade] || newLayers[0].bf,
+        };
+      }
+    }
+    if (item.liner && newLayers.length > 1) {
+      const lastIdx = newLayers.length - 1;
+      const matchedGrade = (Object.keys(preferences.paperRates) as PaperGrade[]).find(
+        (grade) => grade.toLowerCase() === item.liner?.toLowerCase()
+      );
+      if (matchedGrade) {
+        newLayers[lastIdx] = {
+          ...newLayers[lastIdx],
+          paperGrade: matchedGrade,
+          ratePerKg: preferences.paperRates[matchedGrade] || newLayers[lastIdx].ratePerKg,
+          bf: preferences.paperDefaultBf[matchedGrade] || newLayers[lastIdx].bf,
+        };
+      }
+    }
+    setLayers(newLayers);
+
+    // Stitching / Joint
+    if (item.stitching !== undefined) {
+      setJoint(item.stitching ? 'stitched' : 'glued');
+    }
+
+    // Printing
+    if (item.printing) {
+      const colorMatch = item.printing.match(/(\d+)/);
+      if (colorMatch) {
+        const num = parseInt(colorMatch[1], 10);
+        setPrintingColors(Math.min(4, Math.max(0, num)));
+      } else if (
+        item.printing.toLowerCase().includes('plain') ||
+        item.printing.toLowerCase().includes('unprinted')
+      ) {
+        setPrintingColors(0);
+      }
+    }
+
+    setItemLoadedMessage(
+      `Loaded "${item.itemCode ? `[${item.itemCode}] ` : ''}${item.name}" specifications!`
+    );
+    setTimeout(() => {
+      if (isMounted.current) setItemLoadedMessage(null);
+    }, 4000);
+    setIsItemDropdownOpen(false);
+  };
+
+  // Quick save current specs as reusable item
+  async function handleSaveCurrentAsItem() {
+    const trimmedName = boxName.trim();
+    if (!trimmedName || isSavingItem) return;
+    setIsSavingItem(true);
+    try {
+      const generatedCode = `BOX-${Math.floor(1000 + Math.random() * 9000)}`;
+      const newItem: MasterCatalogItem = {
+        id: `custom-calc-${Date.now()}`,
+        itemCode: generatedCode,
+        name: trimmedName,
+        clientName: partyName.trim() || undefined,
+        boxSize: { l: String(length), w: String(width), h: String(height) },
+        ply: ply,
+        topPaper: layers[0]?.paperGrade || 'Virgin Golden Kraft',
+        liner: layers[layers.length - 1]?.paperGrade || 'High BF Test Liner',
+        gsm: layers.map((l) => l.gsm).join(' / '),
+        cuttingSize: `${calc.cuttingLength} × ${calc.cuttingWidth} mm`,
+        decalSize: `${calc.deckleInches} Inches`,
+        printing: printingColors > 0 ? `${printingColors}-Color Flexo` : 'Plain Unprinted',
+        stitching: joint !== 'glued',
+        remarks: `${boxType.toUpperCase()} - Net: ${calc.weightPerBoxGram}g - BCT: ${calc.estimatedBctKgf} kgf`,
+        isCustom: true,
+      };
+
+      saveLocalCustomItem(newItem);
+      setCatalogItems((prev) => [newItem, ...prev]);
+
+      await createQuickItemAction({
+        name: newItem.name,
+        itemCode: newItem.itemCode,
+        boxSize: newItem.boxSize,
+        ply: newItem.ply,
+        topPaper: newItem.topPaper,
+        liner: newItem.liner,
+        gsm: newItem.gsm,
+        cuttingSize: newItem.cuttingSize,
+        decalSize: newItem.decalSize,
+        printing: newItem.printing,
+        stitching: newItem.stitching,
+        remarks: newItem.remarks,
+      });
+
+      setItemLoadedMessage(`"${trimmedName}" saved to Master Item Catalog!`);
+      setTimeout(() => {
+        if (isMounted.current) setItemLoadedMessage(null);
+      }, 4000);
+      setIsItemDropdownOpen(false);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (isMounted.current) setIsSavingItem(false);
+    }
+  }
+
   if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -630,14 +825,154 @@ export default function UniversalCalculatorPage() {
                 )}
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-industrial/70">Box Description / Name</label>
-                <input
-                  type="text"
-                  value={boxName}
-                  onChange={(e) => setBoxName(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-kraft-dark/30 rounded-lg text-sm font-bold text-industrial"
-                />
+              <div className="space-y-1 relative" ref={itemContainerRef}>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-industrial/70 flex items-center gap-1.5">
+                    <Box className="w-3.5 h-3.5 text-industrial" />
+                    Box Name / Item Code
+                  </label>
+                  {itemLoadedMessage ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-800 bg-green-100 px-1.5 py-0.5 rounded shadow-2xs animate-in fade-in duration-200">
+                      <Check className="w-2.5 h-2.5 text-green-700" />
+                      {itemLoadedMessage}
+                    </span>
+                  ) : isExactItemMatch ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded">
+                      <Sparkles className="w-2.5 h-2.5 text-blue-600" />
+                      Catalog Item Matched
+                    </span>
+                  ) : boxName.trim().length > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-industrial/60 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">
+                      Custom Specs
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={boxName}
+                    placeholder="e.g. 10 KG FRESH MANGO CARTON, or enter item code..."
+                    onChange={(e) => {
+                      setBoxName(e.target.value);
+                      setIsItemDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsItemDropdownOpen(true)}
+                    className="w-full pl-3 pr-8 py-2 bg-white border border-kraft-dark/30 rounded-lg text-sm font-bold text-industrial focus:outline-none focus:ring-1 focus:ring-industrial"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsItemDropdownOpen((prev) => !prev)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-industrial/40 hover:text-industrial transition-colors focus:outline-none cursor-pointer"
+                    tabIndex={-1}
+                    title="Toggle item catalog list"
+                  >
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isItemDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Dropdown Menu for Items */}
+                {isItemDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 bg-white border-2 border-black rounded-lg shadow-2xl overflow-hidden flex flex-col animate-in fade-in duration-150">
+                    <div className="px-3 py-1.5 bg-gray-100 border-b border-gray-200 flex items-center justify-between text-[11px] font-bold text-industrial/70 uppercase tracking-wider">
+                      <span className="flex items-center gap-1.5">
+                        <Tag className="w-3.5 h-3.5 text-industrial" />
+                        Master Item Catalog & Templates
+                      </span>
+                      <span className="text-[10px] font-normal text-industrial/50 lowercase">
+                        {filteredCatalogItems.length} available
+                      </span>
+                    </div>
+
+                    <div className="max-h-56 overflow-y-auto divide-y divide-gray-100">
+                      {filteredCatalogItems.length > 0 ? (
+                        filteredCatalogItems.map((item) => {
+                          const isSelected =
+                            item.name.toLowerCase() === trimmedItemQuery ||
+                            (item.itemCode &&
+                              item.itemCode.toLowerCase() === trimmedItemQuery);
+                          return (
+                            <button
+                              key={item.id}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                handleSelectItem(item);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs flex flex-col gap-1 transition-colors ${
+                                isSelected
+                                  ? 'bg-kraft-light/50 font-bold text-black'
+                                  : 'hover:bg-gray-50 text-industrial'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-1.5 font-bold text-xs truncate">
+                                  {item.itemCode && (
+                                    <span className="px-1.5 py-0.5 rounded bg-industrial text-white text-[9px] font-mono">
+                                      {item.itemCode}
+                                    </span>
+                                  )}
+                                  <span className="truncate">{item.name}</span>
+                                </div>
+                                <span className="text-[9px] font-bold text-industrial/70 uppercase bg-gray-100 px-1.5 py-0.5 rounded ml-1 flex-shrink-0">
+                                  Auto-Fill &rarr;
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[10px] text-industrial/60 font-mono">
+                                <span>
+                                  {item.boxSize?.l} × {item.boxSize?.w} × {item.boxSize?.h} mm
+                                </span>
+                                <span>•</span>
+                                <span>{item.ply}-Ply</span>
+                                {item.clientName && (
+                                  <>
+                                    <span>•</span>
+                                    <span className="text-industrial/80 font-bold truncate">
+                                      {item.clientName}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="p-3 text-center text-xs text-gray-500">
+                          No catalog item matches &ldquo;{boxName.trim()}&rdquo;
+                        </div>
+                      )}
+                    </div>
+
+                    {boxName.trim().length > 0 && (
+                      <div className="p-2 bg-kraft-lighter border-t border-kraft-dark/20">
+                        <button
+                          type="button"
+                          disabled={isSavingItem}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={handleSaveCurrentAsItem}
+                          className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-industrial hover:bg-black text-white text-xs font-bold rounded transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                        >
+                          <span className="flex items-center gap-1.5 truncate">
+                            {isSavingItem ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Plus className="w-3.5 h-3.5" />
+                            )}
+                            <span>Save &ldquo;{boxName.trim()}&rdquo; to Catalog</span>
+                          </span>
+                          <span className="text-[10px] uppercase font-mono bg-white/20 px-1.5 py-0.5 rounded">
+                            {isSavingItem ? 'Saving...' : 'Save Item'}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
