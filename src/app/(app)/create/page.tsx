@@ -33,7 +33,9 @@ export default async function CreateJobPage({ searchParams }: CreateJobPageProps
 
     const isFromWebsite = Boolean(resolvedParams?.boxSizeL || resolvedParams?.cuttingSize || resolvedParams?.boxName);
 
-    const sourceLabel = resolvedParams?.from === 'solutions'
+    const sourceLabel = resolvedParams?.from === 'calculator'
+        ? 'UNIVERSAL CORRUGATION CALCULATOR'
+        : resolvedParams?.from === 'solutions'
         ? 'INDUSTRY SOLUTIONS BLUEPRINT'
         : 'WEBSITE ESTIMATOR';
 

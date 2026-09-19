@@ -15,7 +15,7 @@ import { JobCard } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function MarketingHomePage() {
+export default async function WebsitePage() {
   let liveStats: {
     totalJobCards: number;
     totalClients: number;

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { User } from '@supabase/supabase-js';
-import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut, User as UserIcon, Building2, Globe } from 'lucide-react';
+import { Box, LayoutDashboard, PlusCircle, Menu, X, Package, LogOut, User as UserIcon, Building2, Calculator, Settings } from 'lucide-react';
 import { Button } from './ui/Button';
 import { createClient } from '@/lib/supabase/client';
 import { signOutAction } from '@/lib/auth-actions';
@@ -99,12 +99,20 @@ export function Sidebar() {
                         Industries
                     </Link>
                     <Link
-                        href="/"
+                        href="/calculator"
                         onClick={() => setIsOpen(false)}
-                        className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium text-industrial/70 hover:bg-kraft-dark/10 hover:text-industrial"
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium ${pathname.startsWith('/calculator') ? 'bg-kraft-dark text-kraft-lighter' : 'hover:bg-kraft-dark/10'}`}
                     >
-                        <Globe className="w-5 h-5" />
-                        Public Website
+                        <Calculator className="w-5 h-5" />
+                        Corrugation Calculator
+                    </Link>
+                    <Link
+                        href="/settings"
+                        onClick={() => setIsOpen(false)}
+                        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors font-medium ${pathname.startsWith('/settings') ? 'bg-kraft-dark text-kraft-lighter' : 'hover:bg-kraft-dark/10'}`}
+                    >
+                        <Settings className="w-5 h-5" />
+                        Settings
                     </Link>
                 </nav>
 

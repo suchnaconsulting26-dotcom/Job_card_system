@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     'The modern SaaS operating system for corrugated box manufacturers and sheet converters. Instant flute & GSM calculations, 9-stage shop floor tracking, and millimeter-accurate A4 printable job tickets.',
 };
 
-export default function MarketingLayout({
+export default function WebsiteLayout({
   children,
 }: {
   children: React.ReactNode;

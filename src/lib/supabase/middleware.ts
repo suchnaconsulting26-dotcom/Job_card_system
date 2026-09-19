@@ -36,8 +36,15 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
+    // Redirect root / directly to dashboard (or login for guests)
+    if (request.nextUrl.pathname === '/') {
+        const url = request.nextUrl.clone();
+        url.pathname = user ? '/dashboard' : '/login';
+        return NextResponse.redirect(url);
+    }
+
     const isPublicRoute =
-        request.nextUrl.pathname === '/' ||
+        request.nextUrl.pathname.startsWith('/website') ||
         request.nextUrl.pathname.startsWith('/login') ||
         request.nextUrl.pathname.startsWith('/signup') ||
         request.nextUrl.pathname.startsWith('/forgot-password') ||
