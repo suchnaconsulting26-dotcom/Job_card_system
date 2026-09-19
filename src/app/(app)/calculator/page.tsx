@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import {
   Calculator,
@@ -18,9 +18,13 @@ import {
   FileSpreadsheet,
   Check,
   Building2,
-  HelpCircle
+  HelpCircle,
+  ChevronDown,
+  Plus
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { Client } from '@/lib/types';
+import { getIndustriesAction, createIndustryAction } from '@/lib/actions';
 import {
   CalculatorPreferences,
   DEFAULT_CALCULATOR_PREFERENCES,
@@ -46,6 +50,14 @@ export default function UniversalCalculatorPage() {
   const [partyName, setPartyName] = useState<string>('Maruti Agro Foods Exports Pvt Ltd');
   const [boxName, setBoxName] = useState<string>('Universal Corrugated Shipper Carton');
 
+  // Client / Registered Industries Selection
+  const [industries, setIndustries] = useState<Client[]>([]);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isCreatingIndustry, setIsCreatingIndustry] = useState(false);
+  const [justAddedMessage, setJustAddedMessage] = useState<string | null>(null);
+  const clientDropdownRef = useRef<HTMLDivElement>(null);
+  const isMounted = useRef(true);
+
   // Board Spec
   const [ply, setPly] = useState<'3' | '5' | '7'>('5');
   const [layers, setLayers] = useState<PlyLayerSpec[]>([]);
@@ -57,15 +69,83 @@ export default function UniversalCalculatorPage() {
   const [customFlap, setCustomFlap] = useState<number>(35);
   const [customTrimWaste, setCustomTrimWaste] = useState<number>(5);
 
-  // Load preferences from localStorage on mount
+  // Load preferences and industries on mount
   useEffect(() => {
+    isMounted.current = true;
     const prefs = loadCalculatorPreferences();
     setPreferences(prefs);
     setCustomFlap(prefs.allowances.stitchingFlap);
     setCustomTrimWaste(prefs.allowances.trimWastePercent);
     setLayers(createDefaultLayers('5', prefs));
     setIsLoaded(true);
+
+    getIndustriesAction()
+      .then((data) => {
+        if (isMounted.current && data) {
+          setIndustries(data);
+        }
+      })
+      .catch(console.error);
+
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
+
+  // Handle click outside to close client dropdown
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        clientDropdownRef.current &&
+        !clientDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Client search helpers
+  const trimmedQuery = partyName.trim().toLowerCase();
+  const filteredIndustries = industries.filter((ind) =>
+    ind.name.toLowerCase().includes(trimmedQuery)
+  );
+  const isRegisteredIndustry = industries.some(
+    (ind) => ind.name.toLowerCase() === trimmedQuery
+  );
+  const showAddNew = partyName.trim().length > 0 && !isRegisteredIndustry;
+
+  async function handleAddNewIndustry() {
+    const trimmed = partyName.trim();
+    if (!trimmed || isCreatingIndustry) return;
+
+    setIsCreatingIndustry(true);
+    try {
+      const result = await createIndustryAction(trimmed);
+      if (result?.error) {
+        console.error(result.error);
+      } else if (result?.client) {
+        setIndustries((prev) => [...prev, result.client]);
+        setPartyName(result.client.name);
+        setJustAddedMessage(`"${result.client.name}" registered!`);
+        setTimeout(() => {
+          if (isMounted.current) {
+            setJustAddedMessage(null);
+          }
+        }, 3500);
+        setIsDropdownOpen(false);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      if (isMounted.current) {
+        setIsCreatingIndustry(false);
+      }
+    }
+  }
 
   // When Ply changes, reset layers with current preferences
   const handlePlyChange = (newPly: '3' | '5' | '7') => {
@@ -419,16 +499,135 @@ export default function UniversalCalculatorPage() {
               </div>
             </div>
 
-            {/* General Info Inputs */}
+            {/* General Info Inputs with Client/Party Selection */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-xs font-bold text-industrial/70">Client / Party Name</label>
-                <input
-                  type="text"
-                  value={partyName}
-                  onChange={(e) => setPartyName(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-kraft-dark/30 rounded-lg text-sm font-bold text-industrial"
-                />
+              <div className="space-y-1 relative" ref={clientDropdownRef}>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold text-industrial/70">Client / Party Name</label>
+                  {justAddedMessage ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-800 bg-green-100 px-1.5 py-0.5 rounded">
+                      <Check className="w-2.5 h-2.5 text-green-700" />
+                      {justAddedMessage}
+                    </span>
+                  ) : isRegisteredIndustry ? (
+                    <span
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-green-700 bg-green-50 border border-green-200 px-1.5 py-0.5 rounded"
+                      title="This company is registered in Industries"
+                    >
+                      <Check className="w-2.5 h-2.5 text-green-600" />
+                      Registered Industry
+                    </span>
+                  ) : partyName.trim().length > 0 ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-medium text-industrial/60 bg-gray-100 border border-gray-200 px-1.5 py-0.5 rounded">
+                      Custom Party
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={partyName}
+                    placeholder="e.g. Maruti Agro Foods or select existing client"
+                    onChange={(e) => {
+                      setPartyName(e.target.value);
+                      setIsDropdownOpen(true);
+                    }}
+                    onFocus={() => setIsDropdownOpen(true)}
+                    className="w-full pl-3 pr-8 py-2 bg-white border border-kraft-dark/30 rounded-lg text-sm font-bold text-industrial focus:outline-none focus:ring-1 focus:ring-industrial"
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setIsDropdownOpen((prev) => !prev)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-industrial/40 hover:text-industrial transition-colors focus:outline-none"
+                    tabIndex={-1}
+                    title="Toggle registered industries list"
+                  >
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isDropdownOpen ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Dropdown Menu */}
+                {isDropdownOpen && (
+                  <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 bg-white border-2 border-black rounded-lg shadow-2xl overflow-hidden flex flex-col animate-in fade-in duration-150">
+                    <div className="px-3 py-1.5 bg-gray-100 border-b border-gray-200 flex items-center justify-between text-[11px] font-bold text-industrial/70 uppercase tracking-wider">
+                      <span className="flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-industrial" />
+                        Registered Industries
+                      </span>
+                      <span className="text-[10px] font-normal text-industrial/50 lowercase">
+                        {filteredIndustries.length} available
+                      </span>
+                    </div>
+
+                    <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+                      {filteredIndustries.length > 0 ? (
+                        filteredIndustries.map((ind) => {
+                          const isSelected = ind.name.toLowerCase() === trimmedQuery;
+                          return (
+                            <button
+                              key={ind.id}
+                              type="button"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                setPartyName(ind.name);
+                                setIsDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors ${
+                                isSelected
+                                  ? 'bg-kraft-light/50 font-bold text-black'
+                                  : 'hover:bg-gray-50 text-industrial'
+                              }`}
+                            >
+                              <span className="flex items-center gap-2 truncate">
+                                <Building2 className="w-3.5 h-3.5 text-industrial/40 flex-shrink-0" />
+                                <span className="truncate font-medium">{ind.name}</span>
+                              </span>
+                              {isSelected ? (
+                                <span className="flex items-center gap-1 text-[10px] font-bold text-green-700">
+                                  <Check className="w-3 h-3" /> Selected
+                                </span>
+                              ) : (
+                                <span className="text-[10px] uppercase font-semibold text-industrial/40 hover:text-industrial">
+                                  Select
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })
+                      ) : (
+                        <div className="p-3 text-center text-xs text-gray-500">
+                          No registered industry matches &ldquo;{partyName.trim()}&rdquo;
+                        </div>
+                      )}
+                    </div>
+
+                    {showAddNew && (
+                      <div className="p-2 bg-kraft-lighter border-t border-kraft-dark/20">
+                        <button
+                          type="button"
+                          disabled={isCreatingIndustry}
+                          onMouseDown={(e) => e.preventDefault()}
+                          onClick={handleAddNewIndustry}
+                          className="w-full flex items-center justify-between gap-2 px-3 py-2 bg-industrial hover:bg-black text-white text-xs font-bold rounded transition-all shadow-xs cursor-pointer disabled:opacity-50"
+                        >
+                          <span className="flex items-center gap-1.5 truncate">
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Add &ldquo;{partyName.trim()}&rdquo; to Industries</span>
+                          </span>
+                          <span className="text-[10px] uppercase font-mono bg-white/20 px-1.5 py-0.5 rounded">
+                            {isCreatingIndustry ? 'Adding...' : 'Save'}
+                          </span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">
