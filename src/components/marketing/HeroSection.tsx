@@ -71,7 +71,10 @@ export function HeroSection({ liveStats, latestJob }: HeroSectionProps) {
   return (
     <section className="relative pt-12 pb-20 md:pt-20 md:pb-28 overflow-hidden">
       {/* Background Ambient Industrial Accents */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-radial from-kraft-dark/15 via-transparent to-transparent pointer-events-none blur-3xl -z-10" />
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 pointer-events-none -z-10 opacity-70"
+        style={{ background: 'radial-gradient(ellipse at 50% 20%, rgba(141, 110, 99, 0.18), transparent 70%)' }}
+      />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
@@ -168,8 +171,6 @@ export function HeroSection({ liveStats, latestJob }: HeroSectionProps) {
 
               {/* Main Interactive Card Container */}
               <div className="relative bg-white rounded-md border-2 border-industrial shadow-xl overflow-hidden">
-                {/* Paper texture overlay */}
-                <div className="absolute inset-0 pointer-events-none opacity-[0.04] bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')]" />
 
                 {/* Card Top Industrial Header */}
                 <div className="bg-industrial text-kraft-lighter px-5 py-3.5 flex items-center justify-between border-b-2 border-industrial">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createJobAction, updateJobAction, createIndustryAction, getIndustriesAction, getInventoryItemsAction, createQuickItemAction } from '@/lib/actions';
 import { Button } from '@/components/ui/Button';
@@ -91,19 +91,26 @@ export function JobCardForm({ initialData, initialIndustries = [] }: JobCardForm
         };
     }, []);
 
-    // Filter items matching query
-    const trimmedItemQuery = (boxName + ' ' + itemCode).trim().toLowerCase();
-    const filteredCatalogItems = catalogItems.filter((item) => {
-        if (!trimmedItemQuery) return true;
-        const codeMatch = item.itemCode?.toLowerCase().includes(boxName.toLowerCase()) || false;
-        const nameMatch = item.name.toLowerCase().includes(boxName.toLowerCase());
-        return codeMatch || nameMatch;
-    });
+    // Filter items matching query (memoized to prevent performance lag on typing)
+    const trimmedItemQuery = useMemo(() => (boxName + ' ' + itemCode).trim().toLowerCase(), [boxName, itemCode]);
+    const filteredCatalogItems = useMemo(() => {
+        if (!trimmedItemQuery) return catalogItems;
+        const boxLower = boxName.toLowerCase();
+        return catalogItems.filter((item) => {
+            const codeMatch = item.itemCode?.toLowerCase().includes(boxLower) || false;
+            const nameMatch = item.name.toLowerCase().includes(boxLower);
+            return codeMatch || nameMatch;
+        });
+    }, [catalogItems, trimmedItemQuery, boxName]);
 
-    const isExactItemMatch = catalogItems.some(
-        (i) => i.name.toLowerCase() === boxName.trim().toLowerCase() ||
-               (itemCode && i.itemCode?.toLowerCase() === itemCode.trim().toLowerCase())
-    );
+    const isExactItemMatch = useMemo(() => {
+        const trimmedBox = boxName.trim().toLowerCase();
+        const trimmedCode = itemCode.trim().toLowerCase();
+        return catalogItems.some(
+            (i) => i.name.toLowerCase() === trimmedBox ||
+                   (trimmedCode && i.itemCode?.toLowerCase() === trimmedCode)
+        );
+    }, [catalogItems, boxName, itemCode]);
 
     // Auto-fill all specifications from chosen item
     function handleSelectItem(item: MasterCatalogItem) {
@@ -266,13 +273,19 @@ export function JobCardForm({ initialData, initialIndustries = [] }: JobCardForm
         }
     }
 
-    const trimmedQuery = companyName.trim().toLowerCase();
-    const filteredIndustries = trimmedQuery
-        ? industries.filter(ind => ind.name.toLowerCase().includes(trimmedQuery))
-        : industries;
-    const exactMatch = industries.some(ind => ind.name.toLowerCase() === trimmedQuery);
-    const showAddNew = trimmedQuery.length > 0 && !exactMatch;
-    const isRegisteredIndustry = industries.some(ind => ind.name.toLowerCase() === trimmedQuery);
+    const trimmedQuery = useMemo(() => companyName.trim().toLowerCase(), [companyName]);
+    const { filteredIndustries, exactMatch, showAddNew, isRegisteredIndustry } = useMemo(() => {
+        const filtered = trimmedQuery
+            ? industries.filter((ind) => ind.name.toLowerCase().includes(trimmedQuery))
+            : industries;
+        const match = industries.some((ind) => ind.name.toLowerCase() === trimmedQuery);
+        return {
+            filteredIndustries: filtered,
+            exactMatch: match,
+            showAddNew: trimmedQuery.length > 0 && !match,
+            isRegisteredIndustry: match,
+        };
+    }, [industries, trimmedQuery]);
 
     return (
         <>

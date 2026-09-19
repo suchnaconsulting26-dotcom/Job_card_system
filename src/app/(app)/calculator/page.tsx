@@ -139,14 +139,18 @@ export default function UniversalCalculatorPage() {
   }, []);
 
   // Client search helpers
-  const trimmedQuery = partyName.trim().toLowerCase();
-  const filteredIndustries = industries.filter((ind) =>
-    ind.name.toLowerCase().includes(trimmedQuery)
-  );
-  const isRegisteredIndustry = industries.some(
-    (ind) => ind.name.toLowerCase() === trimmedQuery
-  );
-  const showAddNew = partyName.trim().length > 0 && !isRegisteredIndustry;
+  const trimmedQuery = useMemo(() => partyName.trim().toLowerCase(), [partyName]);
+  const { filteredIndustries, isRegisteredIndustry, showAddNew } = useMemo(() => {
+    const filtered = trimmedQuery
+      ? industries.filter((ind) => ind.name.toLowerCase().includes(trimmedQuery))
+      : industries;
+    const match = industries.some((ind) => ind.name.toLowerCase() === trimmedQuery);
+    return {
+      filteredIndustries: filtered,
+      isRegisteredIndustry: match,
+      showAddNew: trimmedQuery.length > 0 && !match,
+    };
+  }, [industries, trimmedQuery]);
 
   async function handleAddNewIndustry() {
     const trimmed = partyName.trim();
@@ -409,20 +413,25 @@ export default function UniversalCalculatorPage() {
   }, [length, width, height, calc, quantity, ply, layers, printingColors, joint, boxName, partyName]);
 
   // Item Catalog search helpers
-  const trimmedItemQuery = boxName.trim().toLowerCase();
-  const filteredCatalogItems = catalogItems.filter((item) => {
-    if (!trimmedItemQuery) return true;
-    return (
-      item.name.toLowerCase().includes(trimmedItemQuery) ||
-      (item.itemCode && item.itemCode.toLowerCase().includes(trimmedItemQuery)) ||
-      (item.clientName && item.clientName.toLowerCase().includes(trimmedItemQuery))
+  const trimmedItemQuery = useMemo(() => boxName.trim().toLowerCase(), [boxName]);
+  const filteredCatalogItems = useMemo(() => {
+    if (!trimmedItemQuery) return catalogItems;
+    return catalogItems.filter((item) => {
+      return (
+        item.name.toLowerCase().includes(trimmedItemQuery) ||
+        (item.itemCode && item.itemCode.toLowerCase().includes(trimmedItemQuery)) ||
+        (item.clientName && item.clientName.toLowerCase().includes(trimmedItemQuery))
+      );
+    });
+  }, [catalogItems, trimmedItemQuery]);
+
+  const isExactItemMatch = useMemo(() => {
+    return catalogItems.some(
+      (item) =>
+        item.name.toLowerCase() === trimmedItemQuery ||
+        (item.itemCode && item.itemCode.toLowerCase() === trimmedItemQuery)
     );
-  });
-  const isExactItemMatch = catalogItems.some(
-    (item) =>
-      item.name.toLowerCase() === trimmedItemQuery ||
-      (item.itemCode && item.itemCode.toLowerCase() === trimmedItemQuery)
-  );
+  }, [catalogItems, trimmedItemQuery]);
 
   // Auto-fill all specifications from chosen catalog item
   const handleSelectItem = (item: MasterCatalogItem) => {

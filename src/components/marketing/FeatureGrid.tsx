@@ -92,10 +92,8 @@ export function FeatureGrid() {
             return (
               <div
                 key={idx}
-                className="bg-kraft-lighter/40 rounded-xl border border-kraft-dark/20 p-6 sm:p-7 hover:shadow-lg hover:border-kraft-dark/50 transition-all duration-300 flex flex-col justify-between group relative overflow-hidden"
+                className="bg-kraft-lighter/40 rounded-xl border border-kraft-dark/20 p-6 sm:p-7 hover:shadow-lg hover:border-kraft-dark/50 transition-[box-shadow,border-color] duration-150 ease-out flex flex-col justify-between group relative overflow-hidden"
               >
-                {/* Subtle paper grain texture */}
-                <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')]" />
 
                 <div className="relative z-10 space-y-4">
                   {/* Top Bar: Icon & Badge */}

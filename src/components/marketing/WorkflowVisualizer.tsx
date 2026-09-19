@@ -165,7 +165,7 @@ export function WorkflowVisualizer() {
                 key={stage.id}
                 type="button"
                 onClick={() => setSelectedStageId(stage.id)}
-                className={`p-3 rounded-md border text-center transition-all cursor-pointer flex flex-col items-center justify-center min-h-[96px] ${
+                className={`p-3 rounded-md border text-center transition-[transform,background-color,border-color,box-shadow] duration-150 ease-out cursor-pointer flex flex-col items-center justify-center min-h-[96px] ${
                   isSelected
                     ? 'bg-industrial text-kraft-lighter border-industrial shadow-md scale-105 ring-2 ring-kraft-dark/40'
                     : 'bg-kraft-lighter/40 border-kraft-dark/20 text-industrial hover:bg-kraft hover:border-kraft-dark/40'

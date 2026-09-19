@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/Button';
 export function CtaBanner() {
   return (
     <section className="py-20 bg-industrial text-kraft-lighter relative overflow-hidden">
-      {/* Texture & Radial Kraft glow */}
-      <div className="absolute inset-0 pointer-events-none opacity-5 bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-80 bg-kraft/15 rounded-full blur-3xl pointer-events-none" />
+      {/* Radial Kraft glow */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl h-80 pointer-events-none opacity-40"
+        style={{ background: 'radial-gradient(ellipse at center, rgba(210, 180, 140, 0.25), transparent 70%)' }}
+      />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-6">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-kraft/20 border border-kraft/40 text-yellow-300 text-xs font-mono font-bold tracking-wider uppercase">

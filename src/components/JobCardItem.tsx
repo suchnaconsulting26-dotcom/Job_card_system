@@ -6,9 +6,7 @@ import { DeleteJobCardButton } from './DeleteJobCardButton';
 
 export function JobCardItem({ card }: { card: JobCard }) {
     return (
-        <div className="bg-white rounded-sm shadow-sm border border-kraft-dark/20 p-6 relative overflow-hidden transition-all hover:shadow-md hover:border-kraft-dark/40 group h-full">
-            {/* Texture overlay */}
-            <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')]"></div>
+        <div className="bg-white rounded-sm shadow-sm border border-kraft-dark/20 p-6 relative overflow-hidden transition-[border-color,box-shadow] duration-150 ease-out hover:shadow-md hover:border-kraft-dark/50 group h-full">
 
             <div className="relative z-10 flex h-full flex-col space-y-4">
                 <div className="flex justify-between items-start">

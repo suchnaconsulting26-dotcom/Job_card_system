@@ -58,10 +58,8 @@ export function TestimonialsSection() {
           {TESTIMONIALS.map((t, idx) => (
             <div
               key={idx}
-              className="bg-kraft-lighter/40 rounded-xl border border-kraft-dark/20 p-8 flex flex-col justify-between hover:shadow-lg hover:border-kraft-dark/40 transition-all duration-300 relative overflow-hidden"
+              className="bg-kraft-lighter/40 rounded-xl border border-kraft-dark/20 p-8 flex flex-col justify-between hover:shadow-lg hover:border-kraft-dark/40 transition-[box-shadow,border-color] duration-150 ease-out relative overflow-hidden"
             >
-              {/* Paper texture overlay */}
-              <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://www.transparenttextures.com/patterns/cardboard-flat.png')]" />
 
               <div className="relative z-10 space-y-4">
                 {/* Rating Stars & Impact Badge */}

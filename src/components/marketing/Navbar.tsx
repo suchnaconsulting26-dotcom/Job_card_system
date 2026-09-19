@@ -15,10 +15,18 @@ export function Navbar() {
 
   useEffect(() => {
     isMounted.current = true;
+    let ticking = false;
+
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setIsScrolled(window.scrollY > 20);
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
-    window.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     // Check active session
     try {
@@ -48,10 +56,10 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-300 ${
+      className={`sticky top-0 z-50 py-3.5 border-b transition-[background-color,border-color,box-shadow] duration-200 ease-out will-change-[background-color,box-shadow] ${
         isScrolled
-          ? 'bg-kraft/95 backdrop-blur-md shadow-md border-b border-kraft-dark/30 py-3'
-          : 'bg-kraft/80 backdrop-blur-sm border-b border-kraft-dark/15 py-4'
+          ? 'bg-kraft/95 backdrop-blur-md shadow-md border-kraft-dark/30'
+          : 'bg-kraft/85 backdrop-blur-sm border-kraft-dark/15'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
