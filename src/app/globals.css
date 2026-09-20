@@ -62,32 +62,53 @@ button, a, input, select, textarea {
 
 @page {
   size: A4 portrait;
-  margin: 10mm;
+  margin: 8mm 10mm;
 }
 
 @media print {
   body {
     background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
+  /* When printing from the preview modal */
   body.is-printing-modal > *:not(.print-preview-portal) {
     display: none !important;
   }
 
   body.is-printing-modal > .print-preview-portal {
     display: block !important;
+    position: static !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    background: white !important;
   }
 
-  body:not(.is-printing-modal) * {
-    visibility: hidden;
+  body.is-printing-modal .print-preview-portal,
+  body.is-printing-modal .print-preview-portal * {
+    visibility: visible !important;
   }
 
-  .print-btn,
+  /* Reset print container to prevent artificial heights */
+  .print-sheet-container {
+    min-height: unset !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+
+  /* When printing without modal (direct page print) */
   header,
   nav,
   aside,
   footer,
-  .no-print {
+  .sidebar,
+  .print-btn,
+  .no-print,
+  [class*="print:hidden"] {
     display: none !important;
   }
 
@@ -97,55 +118,60 @@ button, a, input, select, textarea {
     visibility: visible;
   }
 
+  /* Ticket 1 - Fits exactly the top half of A4 paper (137mm height) */
   .job-card-print {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 190mm;
-    /* A4 width (210mm) - 2x10mm margins */
-    height: 138mm;
-    /* Fits within half of available height (277mm / 2 = 138.5mm) */
-    margin: 0;
+    width: 190mm !important;
+    height: 137mm !important;
+    max-height: 137mm !important;
+    margin: 0 auto !important;
     border: 2px solid black !important;
     box-shadow: none !important;
     padding: 1.5mm !important;
     display: flex !important;
     flex-direction: row !important;
-    overflow: hidden;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
     background: white !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
-  /* Second duplicate ticket for Paper-Saver mode (2 tickets per A4 sheet) */
+  /* Ticket 2 (Paper-Saver Duplicate) - Fits bottom half of same A4 sheet */
   .job-card-print-second,
   .job-card-print-second * {
     visibility: visible;
   }
 
   .job-card-print-second {
-    position: absolute;
-    left: 0;
-    top: 138.5mm; /* 148.5mm physical center - 10mm top margin */
-    width: 190mm;
-    height: 138mm;
-    margin: 0;
+    width: 190mm !important;
+    height: 137mm !important;
+    max-height: 137mm !important;
+    margin: 0 auto !important;
     border: 2px solid black !important;
     box-shadow: none !important;
     padding: 1.5mm !important;
     display: flex !important;
     flex-direction: row !important;
-    overflow: hidden;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
     background: white !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Center dashed cut line for 2-ticket print mode */
   .job-card-cut-line-print {
-    position: absolute;
-    left: 0;
-    top: 138.2mm; /* slightly above the second ticket */
-    width: 190mm;
-    border-top: 1px dashed #666 !important;
-    visibility: visible !important;
+    width: 190mm !important;
+    height: 2mm !important;
+    margin: 1mm auto !important;
+    border-top: 1.5px dashed #000 !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-sizing: border-box !important;
     display: block !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   /* Ensure the content inside fits the half-page */
@@ -157,23 +183,23 @@ button, a, input, select, textarea {
   .job-card-print-second span,
   .job-card-print-second h1,
   .job-card-print-second h3 {
-    font-size: 0.85rem !important;
-    line-height: tight !important;
+    font-size: 0.82rem !important;
+    line-height: 1.15 !important;
   }
 
   .job-card-print h1,
   .job-card-print-second h1 {
-    font-size: 1.25rem !important;
+    font-size: 1.2rem !important;
   }
 
   .job-card-print .text-2xl,
   .job-card-print-second .text-2xl {
-    font-size: 1.1rem !important;
+    font-size: 1.05rem !important;
   }
 
   .job-card-print .text-3xl,
   .job-card-print-second .text-3xl {
-    font-size: 1.5rem !important;
+    font-size: 1.35rem !important;
   }
 }
 

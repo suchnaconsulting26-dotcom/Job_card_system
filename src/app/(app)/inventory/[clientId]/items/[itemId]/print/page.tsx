@@ -20,6 +20,31 @@ export default async function PrintInventoryItemPage({
         notFound();
     }
 
+    const ticketData = {
+        jobNo: item.itemCode ? `#${item.itemCode}` : '#INV',
+        partyName: client.name,
+        boxName: item.name,
+        orderDate: new Date().toISOString().split('T')[0],
+        boxSize: {
+            l: String(item.boxSize?.l || ''),
+            w: String(item.boxSize?.w || ''),
+            h: String(item.boxSize?.h || '')
+        },
+        cuttingSize: item.cuttingSize || '-',
+        decalSize: item.decalSize || '-',
+        quantity: item.quantity,
+        topPaper: item.topPaper || '-',
+        liner: item.liner || '-',
+        numberOfPapers: '-',
+        gsm: item.gsm || '-',
+        ply: item.ply || '-',
+        printingColor: item.printing || 'None',
+        deliveryDate: '-',
+        readyQuantity: String(item.quantity),
+        vehicleNumber: '-',
+        remarks: item.description || '-'
+    };
+
     return (
         <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex items-center justify-between print:hidden">
@@ -30,7 +55,7 @@ export default async function PrintInventoryItemPage({
                     </Button>
                 </Link>
                 <div className="flex gap-2">
-                    <PrintButton />
+                    <PrintButton ticket={ticketData} />
                 </div>
             </div>
 

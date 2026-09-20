@@ -28,7 +28,7 @@ export default async function JobDetailsPage({ params }: { params: Promise<{ id:
                             Edit
                         </Button>
                     </Link>
-                    <PrintButton />
+                    <PrintButton card={card} />
                 </div>
             </div>
 

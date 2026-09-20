@@ -40,6 +40,7 @@ export interface TicketData {
   readyQuantity: string;
   vehicleNumber: string;
   remarks: string;
+  stages?: Array<{ name: string; done: boolean }>;
 }
 
 interface TicketPrintPreviewModalProps {
@@ -48,10 +49,10 @@ interface TicketPrintPreviewModalProps {
   ticket: TicketData;
 }
 
-const STAGES = [
-  { name: 'CORRUGATION', done: true },
-  { name: 'PASTING', done: true },
-  { name: 'PRINTING', done: true },
+const DEFAULT_STAGES = [
+  { name: 'CORRUGATION', done: false },
+  { name: 'PASTING', done: false },
+  { name: 'PRINTING', done: false },
   { name: 'PUNCHING', done: false },
   { name: 'ROTARY', done: false },
   { name: 'RS4', done: false },
@@ -268,9 +269,9 @@ Printing: ${ticket.printingColor}`;
                     isMono ? 'text-black' : 'text-blue-900'
                   }`}
                 >
-                  <div>{ticket.boxSize.l} ×</div>
-                  <div>{ticket.boxSize.w} ×</div>
-                  <div>{ticket.boxSize.h}</div>
+                  <div>{ticket.boxSize?.l || '-'} ×</div>
+                  <div>{ticket.boxSize?.w || '-'} ×</div>
+                  <div>{ticket.boxSize?.h || '-'}</div>
                 </div>
               </div>
 
@@ -526,7 +527,7 @@ Printing: ${ticket.printingColor}`;
               flexDirection: 'column',
             }}
           >
-            {STAGES.map((stage) => (
+            {(ticket.stages || DEFAULT_STAGES).map((stage) => (
               <div
                 key={stage.name}
                 style={{
@@ -712,7 +713,7 @@ Printing: ${ticket.printingColor}`;
           
           {/* Simulated Physical A4 Sheet Container */}
           <div
-            className="w-full max-w-[780px] bg-white text-black shadow-2xl rounded-sm p-4 sm:p-6 relative border border-gray-300 print:max-w-none print:p-0 print:border-none print:shadow-none print:rounded-none"
+            className="w-full max-w-[780px] bg-white text-black shadow-2xl rounded-sm p-4 sm:p-6 relative border border-gray-300 print:max-w-none print:p-0 print:border-none print:shadow-none print:rounded-none print-sheet-container"
             style={{
               minHeight: ticketMode === 'double' ? '920px' : '650px',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 0, 0, 0.1)',
@@ -728,21 +729,30 @@ Printing: ${ticket.printingColor}`;
             </div>
 
             {/* Ticket 1 (Upper Half) */}
-            <div className="relative">
+            <div className="relative print:static">
               {renderTicketCard(false)}
             </div>
 
             {/* Middle Perforation / Cut Line Guide */}
-            <div className="my-5 border-t-2 border-dashed border-gray-400 relative text-center print:job-card-cut-line-print">
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-[9px] font-mono font-bold text-gray-500 uppercase flex items-center gap-1">
-                <Scissors className="w-3 h-3 text-gray-600" />
-                <span>✂ CUT ALONG DASHED LINE TO SEPARATE HALF-PAGE (148.5 MM) ✂</span>
+            {ticketMode === 'double' ? (
+              <div className="job-card-cut-line-print my-4 border-t-2 border-dashed border-gray-400 relative text-center">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-[9px] font-mono font-bold text-gray-500 uppercase flex items-center gap-1 print:hidden">
+                  <Scissors className="w-3 h-3 text-gray-600" />
+                  <span>✂ CUT ALONG DASHED LINE TO SEPARATE HALF-PAGE (148.5 MM) ✂</span>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="my-5 border-t-2 border-dashed border-gray-400 relative text-center print:hidden">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-[9px] font-mono font-bold text-gray-500 uppercase flex items-center gap-1">
+                  <Scissors className="w-3 h-3 text-gray-600" />
+                  <span>✂ CUT ALONG DASHED LINE TO SEPARATE HALF-PAGE (148.5 MM) ✂</span>
+                </div>
+              </div>
+            )}
 
             {/* Ticket 2 (Bottom Half) or Paper-Saver Prompt */}
             {ticketMode === 'double' ? (
-              <div className="relative pt-1">
+              <div className="relative pt-1 print:pt-0 print:static">
                 {renderTicketCard(true)}
               </div>
             ) : (
